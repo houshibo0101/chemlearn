@@ -1,0 +1,25 @@
+{
+  "name": "化学学习助手 ChemLearn",
+  "short_name": "化学助手",
+  "description": "高中生化学学习平台 - AI问答、智能刷题、错题整理",
+  "start_url": "/chem/app/",
+  "scope": "/chem/app/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0a0a1a",
+  "theme_color": "#6366f1",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "/app/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    "education",
+    "science"
+  ],
+  "prefer_related_applications": false
+}

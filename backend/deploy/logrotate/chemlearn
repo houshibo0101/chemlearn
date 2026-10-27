@@ -1,0 +1,15 @@
+# ChemLearn 后端日志轮转配置
+# 放置路径: /etc/logrotate.d/chemlearn
+
+/home/mc/chemlearn/backend/backend.log {
+    daily               # 每天轮转
+    rotate 7            # 保留7天
+    compress            # 压缩旧日志
+    delaycompress       # 延迟压缩（第二天才压缩）
+    missingok           # 文件不存在不报错
+    notifempty          # 空文件不轮转
+    copytruncate        # 复制后截断（不重启进程）
+    size 100M           # 超过100M也轮转
+    dateext             # 文件名加日期
+    dateformat -%Y%m%d  # 日期格式
+}

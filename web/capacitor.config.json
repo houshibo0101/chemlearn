@@ -1,0 +1,5 @@
+{
+  "appId": "com.chemlearn.app",
+  "appName": "化学学习助手",
+  "webDir": "dist/app"
+}

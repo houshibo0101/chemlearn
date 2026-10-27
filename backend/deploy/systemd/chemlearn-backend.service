@@ -1,0 +1,22 @@
+[Unit]
+Description=ChemLearn Backend API
+After=network.target
+
+[Service]
+Type=simple
+User=mc
+WorkingDirectory=/home/mc/chemlearn/backend
+ExecStart=/home/mc/chemlearn/backend/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+# 日志配置
+StandardOutput=append:/home/mc/chemlearn/backend/backend.log
+StandardError=append:/home/mc/chemlearn/backend/backend.log
+
+# 资源限制
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

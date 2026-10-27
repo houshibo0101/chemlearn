@@ -1,0 +1,59 @@
+# ---------- 依赖 ----------
+node_modules/
+.venv/
+venv/
+envs/
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---------- 构建产物 ----------
+dist/
+build/
+.vite/
+*.spec.bak
+
+# ---------- 部署包与可执行文件 ----------
+payload_chem.tar.gz
+deployer/linux/build/
+deployer/windows/out/
+deployer/windows/dist/
+*.exe
+*.pkg
+*.pyz
+*.zip
+*.tar.gz
+*.apk
+
+# ---------- 数据库 ----------
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite3
+uploads/
+
+# ---------- 环境与密钥 ----------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ---------- 编辑器 / 系统 ----------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+
+# ---------- Capacitor 同步产物 ----------
+web/android/app/src/main/assets/public/
+
+# ---------- Capacitor 同步产物 ----------
+web/android/app/src/main/assets/public/

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#22d3ee"/>
+    </linearGradient>
+    <linearGradient id="liquid" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#22d3ee"/>
+      <stop offset="100%" style="stop-color:#6366f1"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- 烧瓶 -->
+  <g transform="translate(256, 256)">
+    <!-- 烧瓶颈部 -->
+    <rect x="-30" y="-140" width="60" height="80" rx="8" fill="rgba(255,255,255,0.9)"/>
+    <!-- 烧瓶身体 -->
+    <path d="M -90 0 L -90 60 Q -90 130 0 130 Q 90 130 90 60 L 90 0 Z" fill="rgba(255,255,255,0.9)"/>
+    <!-- 液体 -->
+    <path d="M -80 30 L -80 60 Q -80 115 0 115 Q 80 115 80 60 L 80 30 Q 40 50 0 30 Q -40 10 -80 30 Z" fill="url(#liquid)" opacity="0.85"/>
+    <!-- 气泡 -->
+    <circle cx="-20" cy="70" r="8" fill="rgba(255,255,255,0.6)"/>
+    <circle cx="25" cy="85" r="6" fill="rgba(255,255,255,0.5)"/>
+    <circle cx="0" cy="55" r="5" fill="rgba(255,255,255,0.4)"/>
+    <!-- 瓶口 -->
+    <rect x="-36" y="-150" width="72" height="16" rx="6" fill="rgba(255,255,255,0.95)"/>
+  </g>
+  <!-- 原子装饰 -->
+  <circle cx="100" cy="100" r="6" fill="rgba(255,255,255,0.6)"/>
+  <circle cx="412" cy="120" r="4" fill="rgba(255,255,255,0.5)"/>
+  <circle cx="80" cy="400" r="5" fill="rgba(255,255,255,0.4)"/>
+  <circle cx="420" cy="380" r="7" fill="rgba(255,255,255,0.5)"/>
+</svg>

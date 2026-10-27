@@ -1,0 +1,18 @@
+[Unit]
+Description=ChemLearn AI Service
+After=network.target
+
+[Service]
+Type=simple
+User=mc
+Group=mc
+WorkingDirectory=/home/mc/chemlearn/backend
+Environment="PATH=/home/mc/chemlearn/backend/venv/bin"
+ExecStart=/home/mc/chemlearn/backend/venv/bin/python /home/mc/chemlearn/backend/ai_server.py
+Restart=always
+RestartSec=5
+StandardOutput=append:/home/mc/chemlearn/backend/ai_service.log
+StandardError=append:/home/mc/chemlearn/backend/ai_service.log
+
+[Install]
+WantedBy=multi-user.target
