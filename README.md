@@ -1,5 +1,7 @@
 # 化学学习系统 · ChemLearn
 
+[![CI](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml/badge.svg)](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml)
+
 一个面向高中化学的在线学习平台：题库刷题、错题本、AI 问答、班级与作业管理、学习报告，
 并附带两套一键部署工具（Linux 服务器 / Windows 本机）。
 
@@ -86,6 +88,14 @@ cd web
 npm install
 npm run build                          # 产物在 web/dist/app
 npm run dev                            # 或本地开发（需在 vite.config.js 配置代理）
+```
+
+### 4. 跑测试
+
+```bash
+cd backend
+pip install -r requirements-dev.txt    # 含 pytest / pytest-asyncio
+pytest -q                              # 使用独立的 test_chemlearn.db，不碰开发库
 ```
 
 前端默认按 `/chem/app/` 作为静态路径、`/chem/api/v1` 作为接口前缀（与 nginx 子路径部署一致）。
