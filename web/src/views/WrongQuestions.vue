@@ -1,11 +1,14 @@
 <template>
   <div class="app-container" style="padding-bottom:80px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-      <h2>📕 错题本</h2>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <el-button type="warning" :icon="VideoPlay" @click="repractice">一键重练错题</el-button>
-        <el-button type="primary" :icon="Printer" @click="exportPDF">导出PDF</el-button>
-        <el-button type="success" :icon="Download" @click="exportExcel">导出Excel</el-button>
+    <div class="page-head">
+      <div>
+        <div class="page-head__title">错题本</div>
+        <div class="page-head__desc">按错误次数排序，可导出成 PDF / Excel 打印复习</div>
+      </div>
+      <div class="page-head__actions">
+        <el-button type="primary" :icon="VideoPlay" @click="repractice">一键重练错题</el-button>
+        <el-button :icon="Printer" @click="exportPDF">导出 PDF</el-button>
+        <el-button :icon="Download" @click="exportExcel">导出 Excel</el-button>
       </div>
     </div>
 

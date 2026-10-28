@@ -1,10 +1,15 @@
 <template>
   <div class="app-container" style="padding-bottom:80px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-      <h2>🔔 消息通知</h2>
-      <el-button type="primary" plain size="small" :disabled="unread === 0" :loading="readAllLoading" @click="readAll">
-        全部标为已读{{ unread > 0 ? `（${unread}条未读）` : '' }}
-      </el-button>
+    <div class="page-head">
+      <div>
+        <div class="page-head__title">消息通知</div>
+        <div class="page-head__desc">作业、考试与系统消息都在这里</div>
+      </div>
+      <div class="page-head__actions">
+        <el-button type="primary" plain size="small" :disabled="unread === 0" :loading="readAllLoading" @click="readAll">
+          全部标为已读{{ unread > 0 ? `（${unread}条未读）` : '' }}
+        </el-button>
+      </div>
     </div>
 
     <el-card v-if="list.length === 0 && !loading" class="page-card">

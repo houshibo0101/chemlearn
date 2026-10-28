@@ -1,7 +1,7 @@
 <template>
   <div class="app-container" style="padding-bottom:80px;">
     <div class="page-head">
-      <div class="page-head__title">👤 个人中心</div>
+      <div class="page-head__title">个人中心</div>
     </div>
 
     <el-card class="page-card">

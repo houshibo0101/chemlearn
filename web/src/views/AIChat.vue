@@ -1,7 +1,7 @@
 <template>
   <div class="app-container" style="padding-bottom:80px;display:flex;flex-direction:column;height:calc(100vh - 60px);">
     <div class="page-head" style="margin-bottom:14px;">
-      <div class="page-head__title">🤖 AI 化学问答</div>
+      <div class="page-head__title">AI 化学问答</div>
       <div style="display:flex;align-items:center;gap:10px;">
         <el-tooltip :content="`已用 ${stats.usage_percent}%（${formatBytes(stats.total_bytes)} / 1MB），超出后自动删除最早对话`">
           <span class="quota-chip">💾 {{ formatBytes(stats.total_bytes) }} / 1MB</span>

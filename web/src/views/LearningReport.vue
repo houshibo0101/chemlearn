@@ -2,7 +2,7 @@
   <div class="app-container">
     <div class="page-head">
       <div>
-        <div class="page-head__title">📈 学习报告</div>
+        <div class="page-head__title">学习报告</div>
         <div class="page-head__desc">基于你每一次真实做题记录的数据分析</div>
       </div>
       <el-button plain size="small" @click="$router.push('/practice-history')">做题历史 →</el-button>
@@ -11,19 +11,27 @@
     <!-- 概览卡 -->
     <div class="ov-grid">
       <div class="ov-card">
-        <div class="ov-icon" style="background:var(--brand-50);color:var(--brand-600);">⚡</div>
+        <div class="ov-icon" style="background:var(--brand-50);color:var(--brand-600);">
+          <el-icon :size="17"><Lightning /></el-icon>
+        </div>
         <div><div class="ov-num">{{ stats.today_count }}</div><div class="ov-label">今日做题</div></div>
       </div>
       <div class="ov-card">
-        <div class="ov-icon" style="background:#ECFDF5;color:#059669;">🔥</div>
+        <div class="ov-icon" style="background:#ECFDF5;color:#059669;">
+          <el-icon :size="17"><Sunny /></el-icon>
+        </div>
         <div><div class="ov-num">{{ stats.streak_days }}<span class="ov-unit">天</span></div><div class="ov-label">连续学习</div></div>
       </div>
       <div class="ov-card">
-        <div class="ov-icon" style="background:#EFF6FF;color:#2563EB;">📚</div>
+        <div class="ov-icon" style="background:#EFF6FF;color:#2563EB;">
+          <el-icon :size="17"><Collection /></el-icon>
+        </div>
         <div><div class="ov-num">{{ stats.total_questions }}</div><div class="ov-label">累计做题</div></div>
       </div>
       <div class="ov-card">
-        <div class="ov-icon" style="background:#FFFBEB;color:#D97706;">🎯</div>
+        <div class="ov-icon" style="background:#FFFBEB;color:#D97706;">
+          <el-icon :size="17"><Aim /></el-icon>
+        </div>
         <div><div class="ov-num">{{ stats.accuracy }}<span class="ov-unit">%</span></div><div class="ov-label">总正确率</div></div>
       </div>
     </div>
@@ -32,7 +40,7 @@
     <el-card class="page-card" style="margin-bottom:16px;">
       <template #header>
         <div class="card-head">
-          <span>近 {{ trend.length }} 天做题趋势</span>
+          <span>近 {{ trend.length || 14 }} 天做题趋势</span>
           <span class="legend">
             <i class="dot" style="background:var(--brand-500);"></i>做题量
             <i class="dot" style="background:var(--success-color);"></i>正确率
@@ -55,13 +63,13 @@
           </rect>
           <text v-if="showLabel(i)" :x="xAt(i)" :y="barH + 18" text-anchor="middle" font-size="11" fill="var(--text-placeholder)">{{ d.date.slice(5) }}</text>
         </g>
-        <!-- 折线：正确率 -->
+        <!-- 折线：正确率（只连有做题记录的日子，避免空白天被画成 0%） -->
         <polyline
           :points="accPoints" fill="none"
           stroke="var(--success-color)" stroke-width="2.5"
           stroke-linejoin="round" stroke-linecap="round" />
         <g v-for="(d, i) in trend" :key="'pt' + i">
-          <circle :cx="xAt(i)" :cy="yAcc(d.accuracy)" r="3.5" fill="var(--success-color)">
+          <circle v-if="d.total > 0" :cx="xAt(i)" :cy="yAcc(d.accuracy)" r="3.5" fill="var(--success-color)">
             <title>{{ d.date }} · 正确率 {{ d.accuracy }}%</title>
           </circle>
         </g>
@@ -102,14 +110,14 @@
               {{ kpLimit === 8 ? `展开全部 ${kp.details.length} 个知识点` : '收起' }}
             </el-button>
           </div>
-          <div v-if="kp.weak_points?.length" style="margin-top:14px;padding-top:14px;border-top:1px dashed var(--border-light);display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <div v-if="kp.weak_points?.length" style="margin-top:14px;padding-top:14px;border-top:1px dashed var(--border-light);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
             <span style="font-size:13px;color:var(--text-secondary);">建议优先复习：{{ kp.weak_points.slice(0, 3).join('、') }}</span>
             <el-button type="primary" size="small" @click="$router.push('/practice')">去刷题</el-button>
           </div>
         </el-card>
       </el-col>
       <el-col :xs="24" :md="10">
-        <el-card class="page-card h-full">
+        <el-card class="page-card">
           <template #header>
             <div class="card-head">
               <span>学习活跃度</span>
@@ -179,7 +187,13 @@ const barW = computed(() => Math.min(26, (padR2 - padL - 14) / N.value * 0.55))
 const maxTotal = computed(() => Math.max(1, ...trend.value.map(d => d.total)))
 const yBar = (v) => barH - (v / maxTotal.value) * (barH - 20)
 const yAcc = (v) => 20 + (1 - v / 100) * (barH - 40)
-const accPoints = computed(() => trend.value.map((d, i) => `${xAt(i)},${yAcc(d.accuracy)}`).join(' '))
+const accPoints = computed(() =>
+  trend.value
+    .map((d, i) => ({ d, i }))
+    .filter(({ d }) => d.total > 0)
+    .map(({ d, i }) => `${xAt(i)},${yAcc(d.accuracy)}`)
+    .join(' ')
+)
 const showLabel = (i) => trend.value.length <= 8 || i % 2 === 0
 const gridLines = [
   { y: yAcc(0), label: '0%' },
@@ -211,11 +225,12 @@ onMounted(async () => {
     api.get('/practice-records/heatmap', { params: { days: 91 } }),
     api.get('/practice-records', { params: { page: 1, page_size: 5 } }),
   ])
-  if (s.status === 'fulfilled') Object.assign(stats, s.value.data)
-  if (t.status === 'fulfilled') trend.value = t.value.data.trend || []
-  if (k.status === 'fulfilled') kp.value = k.value.data
-  if (h.status === 'fulfilled') heat.value = h.value.data
-  if (r.status === 'fulfilled') recent.value = r.value.data.items || []
+  // 注意：axios 拦截器已经返回 response.data，这里不能再取一层 .data
+  if (s.status === 'fulfilled' && s.value) Object.assign(stats, s.value)
+  if (t.status === 'fulfilled') trend.value = (t.value && t.value.trend) || []
+  if (k.status === 'fulfilled' && k.value) kp.value = k.value
+  if (h.status === 'fulfilled' && h.value) heat.value = h.value
+  if (r.status === 'fulfilled') recent.value = (r.value && r.value.items) || []
 })
 </script>
 
@@ -231,11 +246,11 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: var(--bg-primary, var(--bg-color));
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md, 12px);
-  padding: 14px 16px;
-  box-shadow: var(--shadow-sm, 0 1px 3px rgba(15, 23, 42, 0.05));
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  box-shadow: var(--shadow-xs);
 }
 .ov-icon {
   width: 42px;

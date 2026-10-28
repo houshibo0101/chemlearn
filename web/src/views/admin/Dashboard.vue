@@ -18,7 +18,7 @@
     <!-- 页面标题 -->
     <div class="page-head">
       <div>
-        <div class="page-head__title">📊 数据看板</div>
+        <div class="page-head__title">数据看板</div>
         <div class="page-head__desc">平台运营数据总览</div>
       </div>
       <el-button :icon="Refresh" @click="loadAll" :loading="loading">刷新数据</el-button>

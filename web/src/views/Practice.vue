@@ -1,6 +1,11 @@
 <template>
   <div class="app-container" style="padding-bottom:80px;">
-    <h2 style="margin-bottom:16px;">📝 刷题</h2>
+    <div class="page-head">
+      <div>
+        <div class="page-head__title">题库练习</div>
+        <div class="page-head__desc">按学段、难度、题型筛选，勾选题目后开始作答</div>
+      </div>
+    </div>
 
     <!-- 错题重练横幅 -->
     <el-card v-if="wrongMode" class="page-card" style="margin-bottom:16px;border-left:4px solid #F59E0B;">

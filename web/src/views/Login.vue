@@ -1,54 +1,55 @@
 <template>
   <div class="auth-page">
-    <!-- 背景光斑 -->
-    <div class="auth-glow auth-glow--1"></div>
-    <div class="auth-glow auth-glow--2"></div>
-    <div class="auth-glow auth-glow--3"></div>
-
     <div class="auth-shell">
-      <!-- 左侧品牌区 -->
-      <aside class="auth-brand">
-        <div class="auth-brand__inner">
-          <div class="auth-brand__logo">⚗️</div>
-          <h1 class="auth-brand__title">化学学习助手</h1>
-          <p class="auth-brand__sub">ChemLearn · 让化学学习更有章法</p>
-
-          <ul class="auth-brand__features">
-            <li><span class="dot dot--1">📚</span>万道高考真题与知识点题库</li>
-            <li><span class="dot dot--2">🎯</span>智能推题，精准补齐薄弱环节</li>
-            <li><span class="dot dot--3">📈</span>学习报告，进步一目了然</li>
-            <li><span class="dot dot--4">🤖</span>AI 答疑，随时解决疑难</li>
-          </ul>
+      <!-- 左侧说明区 -->
+      <aside class="auth-side">
+        <div class="auth-side__top">
+          <div class="auth-mark">⚗️</div>
+          <div>
+            <div class="auth-mark__name">化学学习助手</div>
+            <div class="auth-mark__sub">ChemLearn</div>
+          </div>
         </div>
 
-        <!-- 装饰分子 -->
-        <svg class="auth-deco" viewBox="0 0 200 200" fill="none" aria-hidden="true">
-          <circle cx="60" cy="60" r="7" fill="rgba(255,255,255,.5)" />
-          <circle cx="150" cy="90" r="5" fill="rgba(255,255,255,.35)" />
-          <circle cx="95" cy="155" r="6" fill="rgba(255,255,255,.4)" />
-          <path d="M60 60 L150 90 L95 155 Z" stroke="rgba(255,255,255,.28)" stroke-width="1.6" />
-        </svg>
+        <h1 class="auth-side__title">让化学学习<br />有章法地推进</h1>
+        <p class="auth-side__desc">从第一道题开始记录，薄弱点在数据里自己会说话。</p>
+
+        <ol class="auth-points">
+          <li v-for="(p, i) in points" :key="p.title">
+            <span class="auth-points__no">{{ String(i + 1).padStart(2, '0') }}</span>
+            <div>
+              <div class="auth-points__title">{{ p.title }}</div>
+              <div class="auth-points__desc">{{ p.desc }}</div>
+            </div>
+          </li>
+        </ol>
+
+        <div class="auth-side__foot">高考真题题库 · 智能推题 · 学习报告</div>
       </aside>
 
       <!-- 右侧表单区 -->
       <section class="auth-form-wrap">
         <header class="auth-head">
-          <div class="auth-head__logo">⚗️</div>
-          <div>
-            <div class="auth-head__title">
-              {{ activeTab === 'login' ? '欢迎回来' : '创建账号' }}
-            </div>
-            <div class="auth-head__sub">
-              {{ activeTab === 'login' ? '登录后继续你的学习进度' : '填写信息，立刻开始学习' }}
-            </div>
+          <div class="auth-head__title">
+            {{ activeTab === 'login' ? '登录' : '创建账号' }}
+          </div>
+          <div class="auth-head__sub">
+            {{ activeTab === 'login' ? '继续你的学习进度' : '填写信息，立刻开始' }}
           </div>
         </header>
 
         <!-- 分段切换 -->
-        <div class="auth-switch">
-          <button class="auth-switch__btn" :class="{ active: activeTab === 'login' }" @click="switchTab('login')">登录</button>
-          <button class="auth-switch__btn" :class="{ active: activeTab === 'register' }" @click="switchTab('register')">注册</button>
-          <span class="auth-switch__thumb" :style="{ transform: activeTab === 'login' ? 'translateX(0)' : 'translateX(100%)' }"></span>
+        <div class="auth-switch" :data-tab="activeTab">
+          <button
+            class="auth-switch__btn"
+            :class="{ active: activeTab === 'login' }"
+            @click="switchTab('login')"
+          >登录</button>
+          <button
+            class="auth-switch__btn"
+            :class="{ active: activeTab === 'register' }"
+            @click="switchTab('register')"
+          >注册</button>
         </div>
 
         <!-- 登录表单 -->
@@ -65,6 +66,9 @@
               登 录
             </el-button>
           </el-form>
+          <div class="auth-foot">
+            还没有账号？<a @click="switchTab('register')">立即注册</a>
+          </div>
         </div>
 
         <!-- 注册表单 -->
@@ -76,16 +80,18 @@
             <el-form-item label="密码" prop="password">
               <el-input v-model="registerForm.password" size="large" type="password" placeholder="至少 6 位，需包含字母和数字" show-password :prefix-icon="Lock" />
             </el-form-item>
-            <el-form-item label="姓名">
-              <el-input v-model="registerForm.full_name" size="large" placeholder="真实姓名（用于错题导出）" :prefix-icon="Postcard" />
-            </el-form-item>
-            <el-form-item label="学段">
-              <el-select v-model="registerForm.grade" size="large" placeholder="选择学段" style="width:100%;">
-                <el-option label="高一" value="高一" />
-                <el-option label="高二" value="高二" />
-                <el-option label="高三" value="高三" />
-              </el-select>
-            </el-form-item>
+            <div class="auth-grid">
+              <el-form-item label="姓名">
+                <el-input v-model="registerForm.full_name" size="large" placeholder="用于错题导出" :prefix-icon="Postcard" />
+              </el-form-item>
+              <el-form-item label="学段">
+                <el-select v-model="registerForm.grade" size="large" placeholder="选择学段" style="width:100%;">
+                  <el-option label="高一" value="高一" />
+                  <el-option label="高二" value="高二" />
+                  <el-option label="高三" value="高三" />
+                </el-select>
+              </el-form-item>
+            </div>
             <el-form-item label="邮箱（选填）">
               <el-input v-model="registerForm.email" size="large" placeholder="可选" :prefix-icon="Message" />
             </el-form-item>
@@ -111,6 +117,13 @@ import { User, Lock, Postcard, Message } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
+
+const points = [
+  { title: '完整题库', desc: '高考真题与知识点分类练习' },
+  { title: '智能推题', desc: '按薄弱知识点持续推题' },
+  { title: '错题本', desc: '自动归集，支持批量导出' },
+  { title: '学习报告', desc: '正确率、进度与掌握情况' },
+]
 
 const activeTab = ref('login')
 const loginFormRef = ref()
@@ -168,112 +181,112 @@ const handleRegister = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
-  position: relative;
-  overflow: hidden;
+  padding: 28px;
   background: var(--bg-primary);
+  background-image: radial-gradient(var(--border-color) 1px, transparent 1px);
+  background-size: 22px 22px;
+  background-position: -1px -1px;
 }
-
-/* 背景光斑 */
-.auth-glow {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(90px);
-  opacity: 0.55;
-  pointer-events: none;
-}
-.auth-glow--1 { width: 460px; height: 460px; background: #C7D2FE; top: -160px; left: -120px; }
-.auth-glow--2 { width: 380px; height: 380px; background: #A5F3FC; bottom: -140px; right: -90px; }
-.auth-glow--3 { width: 300px; height: 300px; background: #DDD6FE; bottom: 120px; left: 34%; opacity: 0.4; }
-[data-theme='dark'] .auth-glow { opacity: 0.25; }
 
 .auth-shell {
-  position: relative;
-  z-index: 1;
   width: 100%;
-  max-width: 940px;
+  max-width: 900px;
   display: grid;
-  grid-template-columns: 0.92fr 1.08fr;
+  grid-template-columns: 0.86fr 1.14fr;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-xl);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
-  animation: shellIn 0.6s var(--ease-out) both;
+  animation: shellIn 0.34s var(--ease-out) both;
 }
 @keyframes shellIn {
-  from { opacity: 0; transform: translateY(22px) scale(0.985); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* 左侧品牌面板 */
-.auth-brand {
-  position: relative;
-  background: var(--gradient-brand-v);
-  color: #fff;
-  padding: 44px 36px;
-  overflow: hidden;
+/* 左侧说明区：中性底色 + 品牌色点缀，不用大面积渐变 */
+.auth-side {
+  background: var(--bg-tertiary);
+  border-right: 1px solid var(--border-light);
+  padding: 38px 34px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
 }
-.auth-brand::after {
-  content: '';
-  position: absolute;
-  width: 300px; height: 300px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  right: -130px; top: -110px;
-}
-.auth-brand__inner { position: relative; z-index: 1; width: 100%; }
-.auth-brand__logo {
-  width: 54px; height: 54px;
-  border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.16);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+.auth-side__top { display: flex; align-items: center; gap: 11px; margin-bottom: 30px; }
+.auth-mark {
+  width: 40px; height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   display: flex; align-items: center; justify-content: center;
-  font-size: 28px;
-  margin-bottom: 20px;
-  backdrop-filter: blur(6px);
+  font-size: 20px;
+  flex-shrink: 0;
 }
-.auth-brand__title { font-size: 25px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 6px; }
-.auth-brand__sub { font-size: 13px; color: rgba(255, 255, 255, 0.78); margin-bottom: 30px; }
-.auth-brand__features { list-style: none; display: flex; flex-direction: column; gap: 15px; }
-.auth-brand__features li {
-  display: flex; align-items: center; gap: 11px;
-  font-size: 13.5px; color: rgba(255, 255, 255, 0.93);
+.auth-mark__name { font-size: 14px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em; }
+.auth-mark__sub {
+  font-size: 11px;
+  color: var(--text-placeholder);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 1px;
 }
-.dot {
-  width: 30px; height: 30px; flex-shrink: 0;
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px;
+
+.auth-side__title {
+  font-size: 24px;
+  line-height: 1.42;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 0 0 10px;
 }
-.auth-deco {
-  position: absolute;
-  width: 230px; height: 230px;
-  right: -40px; bottom: -30px;
-  opacity: 0.75;
+.auth-side__desc {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-tertiary);
+  margin: 0 0 26px;
+}
+
+.auth-points { list-style: none; margin: 0; padding: 0; flex: 1; }
+.auth-points li {
+  display: flex;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px dashed var(--border-light);
+}
+.auth-points li:first-child { padding-top: 0; }
+.auth-points li:last-child { border-bottom: none; }
+.auth-points__no {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--brand-400);
+  padding-top: 2px;
+  flex-shrink: 0;
+}
+.auth-points__title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.auth-points__desc { font-size: 12px; color: var(--text-placeholder); margin-top: 2px; line-height: 1.55; }
+
+.auth-side__foot {
+  margin-top: 24px;
+  font-size: 11.5px;
+  color: var(--text-disabled);
+  letter-spacing: 0.01em;
 }
 
 /* 右侧表单 */
-.auth-form-wrap { padding: 44px 42px; display: flex; flex-direction: column; justify-content: center; }
-
-.auth-head { display: flex; align-items: center; gap: 13px; margin-bottom: 24px; }
-.auth-head__logo {
-  display: none;
-  width: 44px; height: 44px;
-  border-radius: var(--radius-md);
-  background: var(--gradient-brand);
-  align-items: center; justify-content: center;
-  font-size: 22px;
-  box-shadow: var(--shadow-brand-sm);
+.auth-form-wrap {
+  padding: 40px 40px 34px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
-.auth-head__title { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; color: var(--text-primary); }
-.auth-head__sub { font-size: 13px; color: var(--text-tertiary); margin-top: 2px; }
 
-/* 分段控件 */
+.auth-head { margin-bottom: 22px; }
+.auth-head__title { font-size: 21px; font-weight: 700; letter-spacing: -0.02em; color: var(--text-primary); }
+.auth-head__sub { font-size: 13px; color: var(--text-tertiary); margin-top: 4px; }
+
+/* 分段控件：实心品牌色滑块 */
 .auth-switch {
   position: relative;
   display: grid;
@@ -281,60 +294,79 @@ const handleRegister = async () => {
   background: var(--bg-tertiary);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
-  padding: 4px;
-  margin-bottom: 24px;
+  padding: 3px;
+  margin-bottom: 22px;
 }
 .auth-switch__btn {
   position: relative;
   z-index: 2;
-  border: none; background: transparent; cursor: pointer;
-  font-family: inherit; font-size: 14px; font-weight: 600;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
   color: var(--text-tertiary);
-  padding: 9px 0;
+  padding: 8px 0;
   border-radius: var(--radius-sm);
   transition: color var(--dur) var(--ease);
 }
 .auth-switch__btn.active { color: #fff; }
-.auth-switch__thumb {
+.auth-switch::after {
+  content: '';
   position: absolute;
   z-index: 1;
-  top: 4px; left: 4px;
-  width: calc(50% - 4px);
-  height: calc(100% - 8px);
+  top: 3px; left: 3px;
+  width: calc(50% - 3px);
+  height: calc(100% - 6px);
   border-radius: var(--radius-sm);
-  background: var(--gradient-brand);
-  box-shadow: var(--shadow-brand-sm);
-  transition: transform 0.28s var(--ease-out);
+  background: var(--brand-600);
+  transition: transform 0.24s var(--ease-out);
 }
+.auth-switch[data-tab='register']::after { transform: translateX(100%); }
 
-.form-panel { animation: panelIn 0.32s var(--ease-out) both; }
-@keyframes panelIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.form-panel { animation: panelIn 0.24s var(--ease-out) both; }
+@keyframes panelIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-:deep(.el-form-item__label) { padding-bottom: 4px; font-size: 13px; }
+.auth-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+:deep(.el-form-item) { margin-bottom: 16px; }
+:deep(.el-form-item__label) {
+  padding-bottom: 5px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
 
 .auth-submit {
   width: 100%;
-  height: 46px;
-  margin-top: 6px;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 3px;
+  height: 44px;
+  margin-top: 4px;
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: 4px;
   border: none;
   border-radius: var(--radius-md);
+  box-shadow: none;
 }
 
-.auth-foot { text-align: center; margin-top: 18px; font-size: 13px; color: var(--text-tertiary); }
-.auth-foot a { cursor: pointer; font-weight: 600; margin-left: 2px; }
+.auth-foot {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 12.5px;
+  color: var(--text-tertiary);
+}
+.auth-foot a { cursor: pointer; font-weight: 600; margin-left: 2px; color: var(--brand-600); }
+.auth-foot a:hover { color: var(--brand-700); }
 
 @media (max-width: 860px) {
-  .auth-shell { grid-template-columns: 1fr; max-width: 480px; }
-  .auth-brand { display: none; }
-  .auth-head__logo { display: flex; }
-  .auth-form-wrap { padding: 34px 26px; }
+  .auth-shell { grid-template-columns: 1fr; max-width: 460px; }
+  .auth-side { display: none; }
+  .auth-form-wrap { padding: 32px 26px; }
 }
 @media (max-width: 420px) {
   .auth-page { padding: 14px; }
-  .auth-form-wrap { padding: 28px 20px; }
-  .auth-head__title { font-size: 19px; }
+  .auth-form-wrap { padding: 26px 20px; }
+  .auth-grid { grid-template-columns: 1fr; gap: 0; }
 }
 </style>
