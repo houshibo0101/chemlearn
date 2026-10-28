@@ -3,6 +3,7 @@
 """
 import os
 import json
+import logging
 import uuid
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,10 +15,18 @@ from app.models.question import Question
 from app.core.config import settings
 import httpx
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/questions", tags=["题目扩展"])
 
-UPLOAD_DIR = "/var/www/chemlearn/uploads/questions"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+# 与 main.py 保持一致：默认 backend/uploads/questions，可用 UPLOAD_DIR 环境变量覆盖。
+# 不要写死 /var/www/... 之类的服务器路径，否则换台机器（或 CI）一导入就 PermissionError。
+_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+UPLOAD_DIR = os.environ.get("UPLOAD_DIR") or os.path.join(_BACKEND_DIR, "uploads", "questions")
+try:
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+except OSError as exc:  # 目录不可写时不要让整个应用起不来
+    logger.warning("题目图片上传目录不可用（%s）：%s", UPLOAD_DIR, exc)
 
 
 @router.post("/upload-image", summary="上传题目图片")

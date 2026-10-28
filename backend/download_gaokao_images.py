@@ -6,7 +6,7 @@ import os
 import sqlite3
 import urllib.request
 
-UPLOAD_DIR = "/var/www/chemlearn/uploads/questions"
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads", "questions")
 DB_PATH = os.path.expanduser("~/chemlearn/backend/chemlearn.db")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
