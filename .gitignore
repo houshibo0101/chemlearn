@@ -38,6 +38,9 @@ deployer/windows/dist/
 *.sqlite3
 uploads/
 
+# ---------- 题库数据（单独在 Releases 发布）----------
+backend/import_data/*.json
+
 # ---------- 环境与密钥 ----------
 .env
 .env.*

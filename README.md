@@ -45,7 +45,7 @@ chemlearn/
 │   │   ├── services/       # 业务服务（AI、缓存、邮件、判分 ...）
 │   │   └── main.py         # 入口，含 SPA 静态托管
 │   ├── alembic/            # 数据库迁移
-│   ├── import_data/        # 题库 JSON（导入用）
+│   ├── import_data/        # 题库目录（JSON 需从 Releases 下载，见下文）
 │   ├── tests/              # pytest
 │   └── requirements.txt
 ├── web/                    # Vue 3 前端（含 Capacitor Android 工程）
@@ -76,10 +76,19 @@ uvicorn app.main:app --reload --port 8000
 
 ### 2. 导入题库（可选）
 
+题库不随源码分发，单独打包放在 Releases：
+
+**[下载 chemlearn-question-bank-453.zip](https://github.com/houshibo0101/chemlearn/releases/tag/question-bank-v1)**（453 道高考化学题，134 KB）
+
+下载解压后，把其中的 `*.json` 放进 `backend/import_data/`，然后执行：
+
 ```bash
 cd backend
 python import_gaokao_unified.py        # 按 import_data/*.json 导入
 ```
+
+没有题库也能正常使用系统，只是题目列表为空，可在后台「题库管理」里自己录入或导入 Excel / PDF。
+数据格式见 [`backend/import_data/README.md`](backend/import_data/README.md)。
 
 ### 3. 前端
 
