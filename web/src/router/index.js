@@ -7,6 +7,7 @@ const routes = [
   { path: '/change-password', name: 'ChangePassword', component: () => import('@/views/ChangePassword.vue'), meta: { requiresAuth: true } },
   { path: '/', name: 'Home', component: () => import('@/views/Home.vue') },
   { path: '/practice', name: 'Practice', component: () => import('@/views/Practice.vue') },
+  { path: '/papers', name: 'Papers', component: () => import('@/views/Papers.vue') },
   { path: '/practice/exam', name: 'PracticeExam', component: () => import('@/views/PracticeExam.vue') },
   { path: '/wrong', name: 'WrongQuestions', component: () => import('@/views/WrongQuestions.vue') },
   { path: '/favorites', name: 'Favorites', component: () => import('@/views/student/Favorites.vue') },

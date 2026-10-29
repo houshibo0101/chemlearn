@@ -14,6 +14,7 @@
         <template v-if="userStore.user?.role === 'student'">
           <el-menu-item index="/"><el-icon><HomeFilled /></el-icon><span>首页</span></el-menu-item>
           <el-menu-item index="/practice"><el-icon><EditPen /></el-icon><span>刷题</span></el-menu-item>
+          <el-menu-item index="/papers"><el-icon><Files /></el-icon><span>套卷练习</span></el-menu-item>
           <el-menu-item index="/wrong"><el-icon><Warning /></el-icon><span>错题本</span></el-menu-item>
           <el-menu-item index="/favorites"><el-icon><Star /></el-icon><span>我的收藏</span></el-menu-item>
           <el-menu-item index="/practice-history"><el-icon><History /></el-icon><span>做题历史</span></el-menu-item>
@@ -25,6 +26,7 @@
         <!-- 老师端菜单 -->
         <template v-else-if="userStore.user?.role === 'teacher'">
           <el-menu-item index="/ai"><el-icon><ChatDotRound /></el-icon><span>AI问答</span></el-menu-item>
+          <el-menu-item index="/papers"><el-icon><Files /></el-icon><span>套卷练习</span></el-menu-item>
           <el-menu-item index="/teacher/classes"><el-icon><School /></el-icon><span>班级管理</span></el-menu-item>
           <el-menu-item index="/teacher/assignments"><el-icon><Document /></el-icon><span>作业管理</span></el-menu-item>
           <el-menu-item index="/teacher/exams"><el-icon><Tickets /></el-icon><span>考试管理</span></el-menu-item>
@@ -36,6 +38,7 @@
         <template v-else>
           <el-menu-item index="/"><el-icon><HomeFilled /></el-icon><span>首页</span></el-menu-item>
           <el-menu-item index="/practice"><el-icon><EditPen /></el-icon><span>刷题</span></el-menu-item>
+          <el-menu-item index="/papers"><el-icon><Files /></el-icon><span>套卷练习</span></el-menu-item>
           <el-menu-item index="/wrong"><el-icon><Warning /></el-icon><span>错题本</span></el-menu-item>
           <el-menu-item index="/ai"><el-icon><ChatDotRound /></el-icon><span>AI问答</span></el-menu-item>
           <el-menu-item index="/teacher/classes"><el-icon><School /></el-icon><span>班级管理</span></el-menu-item>

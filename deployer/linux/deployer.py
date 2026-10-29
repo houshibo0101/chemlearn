@@ -112,6 +112,8 @@ cp -f "@@ROOT@@/portal/index.html" "@@ROOT@@/portal/api-platform.html" @@PORTAL_
 chown -R @@USER@@ "@@ROOT@@" @@PORTAL_ROOT@@ 2>/dev/null || true
 echo "[OK] 六学科源码 + 数据库 + 门户已就位"
 
+@@WRITE_ENV@@
+
 step "创建 Python 虚拟环境"
 rm -rf "@@VENV@@"
 @@SUDO_U@@ python3 -m venv "@@VENV@@"
@@ -225,6 +227,49 @@ class Deployer:
                 self.nginx_port = wp
         except Exception:
             pass
+
+        # AI 配置：部署时直接写进各学科 backend/.env，装完即可用
+        self.ai_key = (cfg.get("ai_key") or "").strip()
+        self.ai_base = (cfg.get("ai_base") or "").strip() or "https://ark.cn-beijing.volces.com/api/v3"
+        self.ai_model = (cfg.get("ai_model") or "").strip() or "doubao-seed-2-0-mini-260428"
+        self.ai_explain = (cfg.get("ai_explain_model") or "").strip()
+
+    # ---------- AI 配置 ----------
+    def env_text(self):
+        """生成 .env 内容。
+
+        注意：不要写 DEBUG=false —— 那会触发「默认 SECRET_KEY / admin123」的启动拦截，
+        服务直接起不来。
+        """
+        lines = [
+            "# 由部署器生成（改动后需重启服务生效）",
+            "AI_API_KEY=" + self.ai_key,
+            "AI_API_BASE=" + self.ai_base,
+            "AI_MODEL=" + self.ai_model,
+        ]
+        if self.ai_explain:
+            lines.append("AI_EXPLAIN_MODEL=" + self.ai_explain)
+        lines.append("AI_TIMEOUT=180")
+        return "\n".join(lines) + "\n"
+
+    def env_shell(self, root):
+        """setup.sh 里执行的一段：给每个学科的 backend 写 .env
+
+        注意目录用的是学科中文名（化学/数学/...），不是 key（chem/math/...），
+        与 systemd 的 WorkingDirectory 保持一致。
+        """
+        if not self.ai_key:
+            return 'echo "[i] 未填写 AI Key，跳过 .env（部署后 AI 功能不可用）"'
+        body = self.env_text()
+        cmds = []
+        for _key, sub in SUBJECTS:
+            cmds.append(
+                "mkdir -p '%s/%s/backend'\ncat > '%s/%s/backend/.env' <<'SCENVEOF'\n%sSCENVEOF\n"
+                "chown %s '%s/%s/backend/.env' 2>/dev/null || true"
+                % (root, sub, root, sub, body, self.user, root, sub)
+            )
+        cmds.append('echo "[OK] AI 配置已写入 %d 个学科的 .env（模型 %s）"' % (len(SUBJECTS), self.ai_model))
+        return "\n".join(cmds)
 
     # ---------- 基础 ----------
     def log(self, msg, level="info"):
@@ -396,6 +441,7 @@ class Deployer:
                          ENABLE_CMDS=enable, START_CMDS=start, PORTS=ports,
                          NGINX_PORT=self.nginx_port,
                          NGINX_SITE="/etc/nginx/sites-available/" + self.site_name,
+                         WRITE_ENV=self.env_shell(root),
                          DEEPLINK_CHECKS="\n".join(deep))
 
     def gen_cleanup_sh(self, root, portal_root):
@@ -505,7 +551,12 @@ class Deployer:
                 for u in urls:
                     self.log("  " + u, "ok")
                 self.log("管理员默认账号：admin / admin123（请尽快登录修改密码）")
-                self.log("AI 问答功能需在各学科 backend/.env 中配置 AI_API_KEY 后重启服务")
+                if self.ai_key:
+                    self.log("AI 已写入各学科 backend/.env：模型 %s（套卷生成 / AI 问答可直接用）" % self.ai_model, "ok")
+                    if self.ai_explain:
+                        self.log("解析模型：%s" % self.ai_explain)
+                else:
+                    self.log("未配置 AI：AI 问答与套卷生成不可用，可在 backend/.env 补 AI_API_KEY 后重启")
                 STATE["ok"] = True
             else:
                 self.log("⚠ 部署完成但有失败项（见上方 [FAIL] 行），请检查后重试", "fail")
@@ -624,8 +675,20 @@ input{width:100%;background:rgba(255,255,255,.045);border:1px solid var(--line);
   border-radius:12px;padding:13px 15px;font-size:14.5px;outline:none;transition:border .18s,box-shadow .18s,background .18s}
 input::placeholder{color:#4b5670}
 input:focus{border-color:#818cf8;background:rgba(255,255,255,.07);box-shadow:0 0 0 4px rgba(99,102,241,.15)}
-input.err{border-color:#f87171;animation:shake .35s}
-@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+input.err{border-color:#f87171;animation:shake .35s}@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+/* AI 配置区块 */
+.ai-sec{padding:16px;border:1px solid rgba(129,140,248,.22);border-radius:14px;
+  background:rgba(99,102,241,.05);margin-bottom:4px}
+.ai-sec>label{margin-bottom:10px!important}
+.ai-row{display:grid;grid-template-columns:1.35fr 1fr;gap:12px;margin-bottom:10px}
+.ai-row input{margin-bottom:0!important}
+.ai-sec input{margin-bottom:10px}
+.ai-sec input:last-of-type{margin-bottom:0}
+.req{color:#f87171;font-weight:700;letter-spacing:0}
+.chk{display:flex!important;align-items:center;gap:8px;margin-bottom:0!important;
+  margin-top:12px;font-size:12px;color:var(--dim);cursor:pointer;letter-spacing:0}
+.chk input{width:auto!important;margin:0!important;accent-color:#818cf8}
+.ai-sec input:disabled{opacity:.4;cursor:not-allowed}
 details.notice{margin-top:18px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02);font-size:12.5px}
 details.notice summary{cursor:pointer;padding:11px 15px;color:var(--sub);font-weight:600;list-style:none;display:flex;align-items:center;gap:8px}
 details.notice summary::-webkit-details-marker{display:none}
@@ -742,6 +805,17 @@ footer{margin-top:34px;text-align:center;font-size:11.5px;color:#414c63;line-hei
         <input id="webport" value="80" spellcheck="false">
         <div class="hintline">默认 80；若该端口被占用可填 8080、8090 等，部署后的访问地址会自动带上端口</div>
       </div>
+      <div class="full ai-sec">
+        <label>AI 模型配置 <span class="req">必填</span></label>
+        <div class="ai-row">
+          <input id="aikey" placeholder="API Key（例如 ark-xxxxxxxx）" spellcheck="false" autocomplete="off">
+          <input id="aimodel" value="doubao-seed-2-0-mini-260428" spellcheck="false" placeholder="模型名称">
+        </div>
+        <input id="aibase" value="https://ark.cn-beijing.volces.com/api/v3" spellcheck="false" placeholder="API 地址">
+        <input id="aiexplain" placeholder="解析模型（可选，留空则与上面的模型相同）" spellcheck="false">
+        <div class="hintline">部署时直接写进各学科 backend/.env 并生效：套卷生成、AI 问答、错题讲解装完就能用，不用再登录服务器改配置</div>
+        <label class="chk"><input type="checkbox" id="noai" onchange="toggleAI()"> 暂不配置 AI（部署后 AI 功能不可用）</label>
+      </div>
     </div>
     <details class="notice">
       <summary>部署须知</summary>
@@ -801,9 +875,17 @@ function addLine(ln){
   box.scrollTop=box.scrollHeight;
 }
 
+function toggleAI(){
+  const off=$('noai').checked;
+  ['aikey','aimodel','aibase','aiexplain'].forEach(id=>{ const e=$(id); if(e) e.disabled=off; });
+}
+
 async function startDeploy(){
   const host=$('host').value.trim(), user=$('user').value.trim(), pwd=$('pwd').value;
   const webport=$('webport').value.trim()||'80';
+  const noai=$('noai').checked;
+  const aikey=$('aikey').value.trim(), aimodel=$('aimodel').value.trim();
+  const aibase=$('aibase').value.trim(), aiexplain=$('aiexplain').value.trim();
   let bad=false;
   for(const id of ['host','pwd']){
     const e=$(id); e.classList.remove('err');
@@ -811,12 +893,18 @@ async function startDeploy(){
   }
   const wpEl=$('webport'); wpEl.classList.remove('err');
   if(!/^\d+$/.test(webport)||+webport<1||+webport>65535){ wpEl.classList.add('err'); bad=true; }
-  if(bad) return;
+  const keyEl=$('aikey'); keyEl.classList.remove('err');
+  if(!noai && !aikey){ keyEl.classList.add('err'); bad=true; }
+  if(bad){
+    if(!noai && !aikey) alert('请填写 AI API Key（或勾选「暂不配置 AI」）');
+    return;
+  }
   const btn=$('btn'); btn.disabled=true; btn.textContent='正在启动…';
   try{
     const r=await fetch('/api/deploy',{method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({host,sshport:$('sshport').value.trim(),user,password:pwd,webport})});
+      body:JSON.stringify({host,sshport:$('sshport').value.trim(),user,password:pwd,webport,
+        aikey:noai?'':aikey,aimodel,aibase,aiexplain:noai?'':aiexplain,noai})});
     const j=await r.json();
     if(!j.ok){ btn.disabled=false; btn.textContent='开始部署'; alert(j.msg||'启动失败'); return; }
   }catch(e){
@@ -949,9 +1037,16 @@ class Handler(BaseHTTPRequestHandler):
                 return
             cfg = {"host": data.get("host", ""), "ssh_port": data.get("sshport", "22"),
                    "user": data.get("user", "root"), "password": data.get("password", ""),
-                   "web_port": data.get("webport", "80")}
+                   "web_port": data.get("webport", "80"),
+                   "ai_key": data.get("aikey", ""),
+                   "ai_base": data.get("aibase", ""),
+                   "ai_model": data.get("aimodel", ""),
+                   "ai_explain_model": data.get("aiexplain", "")}
             if not cfg["host"] or not cfg["password"]:
                 self._json({"ok": False, "msg": "请填写服务器 IP 和密码"})
+                return
+            if not cfg["ai_key"] and not data.get("noai"):
+                self._json({"ok": False, "msg": "请填写 AI API Key，或勾选「暂不配置 AI」"})
                 return
             ok, msg = start_deploy(cfg)
             self._json({"ok": ok, "msg": msg})

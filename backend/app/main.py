@@ -15,7 +15,7 @@ from app.api import (
     classes_router, assignments_router, exams_router, teacher_router,
     offline_router, stats_router, admin_dashboard_router, question_import_router,
     open_platform_v2_router, knowledge_graph_router, question_ext_router,
-    practice_records_router, notifications_router,
+    practice_records_router, notifications_router, papers_router, favorites_router, ai_tasks_router,
 )
 
 
@@ -131,6 +131,9 @@ app.include_router(knowledge_graph_router, prefix=prefix)
 app.include_router(question_ext_router, prefix=prefix)
 app.include_router(practice_records_router, prefix=prefix)
 app.include_router(notifications_router, prefix=prefix)
+app.include_router(papers_router, prefix=prefix)
+app.include_router(favorites_router, prefix=prefix)
+app.include_router(ai_tasks_router, prefix=prefix)
 
 
 @app.get("/", tags=["根"])

@@ -48,9 +48,10 @@
       </div>
 
       <div v-if="aiVisible[item.id]" style="margin-top:12px;padding:12px;background:var(--bg-tertiary);border-radius:8px;">
-        <div v-if="aiLoading[item.id]" style="text-align:center;padding:20px;color:var(--text-placeholder);">
+        <div v-if="aiLoading[item.id] || aiPending[item.id]" style="text-align:center;padding:20px;color:var(--text-placeholder);">
           <el-icon class="is-loading" style="font-size:24px;"><Loading /></el-icon>
           <div style="margin-top:8px;font-size:13px;">AI正在思考...</div>
+          <div style="margin-top:4px;font-size:12px;">已转后台生成，可以先去干别的，完成后「消息通知」会提醒你</div>
         </div>
         <div v-else-if="aiReply[item.id]" class="markdown-body" v-html="renderMarkdown(aiReply[item.id])"></div>
 
@@ -103,7 +104,12 @@
           </el-collapse>
         </div>
         <div v-if="variants.length === 0" style="text-align:center;color:var(--text-secondary);padding:20px 0;font-size:13px;">
-          没有生成有效变式题，请重试
+          <template v-if="variantLoading">
+            <el-icon class="is-loading" style="font-size:22px;"><Loading /></el-icon>
+            <div style="margin-top:8px;">变式题正在后台生成，约需 20-40 秒</div>
+            <div style="margin-top:4px;font-size:12px;color:var(--text-placeholder);">可以关掉这个窗口，完成后「消息通知」会提醒你</div>
+          </template>
+          <template v-else>没有生成有效变式题，请重试</template>
         </div>
         <div style="text-align:center;margin-top:14px;">
           <el-button type="primary" plain size="small" :loading="variantLoading" @click="generateVariants">再生成一组</el-button>
@@ -114,7 +120,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -131,6 +137,7 @@ const loading = ref(false)
 const aiVisible = reactive({})
 const aiLoading = reactive({})
 const aiReply = reactive({})
+const aiPending = reactive({})     // 错题id -> 后台任务id
 const followUp = reactive({})
 
 // ===== AI 变式题 =====
@@ -139,8 +146,73 @@ const variantLoading = ref(false)
 const variants = ref([])
 const variantOriginal = ref(null)
 const variantWrongId = ref(null)
+const variantTaskId = ref(null)
 
 const diffText = (d) => ({ easy: '简单', medium: '中等', hard: '困难' }[d] || d)
+
+/* ---------- 后台任务轮询 ----------
+   AI 讲解/变式题都要几十秒，改成提交后台任务 + 轮询，
+   用户可以关掉页面去干别的，完成后从「消息通知」里看。 */
+const taskTimers = reactive({})
+
+const stopPolling = (taskId) => {
+  const t = taskTimers[taskId]
+  if (t) { clearInterval(t); delete taskTimers[taskId] }
+}
+
+const pollTask = (taskId, onDone, onFail) => {
+  stopPolling(taskId)
+  let tries = 0
+  taskTimers[taskId] = setInterval(async () => {
+    tries++
+    if (tries > 100) {            // 约 200 秒还没结果就当超时
+      stopPolling(taskId)
+      onFail && onFail('生成超时，结果稍后可在「消息通知」中查看')
+      return
+    }
+    try {
+      const t = await api.get(`/ai-tasks/${taskId}`)
+      if (t.status === 'done') {
+        stopPolling(taskId)
+        onDone && onDone(t.result)
+      } else if (t.status === 'failed') {
+        stopPolling(taskId)
+        onFail && onFail(t.error || '生成失败')
+      }
+    } catch { /* 忽略单次轮询失败 */ }
+  }, 2000)
+}
+
+// 页面打开时把还在跑的任务接回来（用户可能中途关过页面）
+const resumePendingTasks = async () => {
+  try {
+    const res = await api.get('/ai-tasks', { params: { limit: 20 } })
+    for (const t of res.items || []) {
+      if (t.status !== 'done' && t.status !== 'failed') continue
+      if (!t.has_result) continue
+    }
+    // 进行中的任务
+    for (const t of (res.items || []).filter(x => x.status === 'pending' || x.status === 'running')) {
+      if (t.task_type === 'explain' && t.ref_id) {
+        aiPending[t.ref_id] = t.id
+        pollTask(t.id, (r) => {
+          aiReply[t.ref_id] = r.reply
+          delete aiPending[t.ref_id]
+        })
+      } else if (t.task_type === 'variant' && t.ref_id) {
+        variantWrongId.value = t.ref_id
+        variantTaskId.value = t.id
+        variantDialog.value = true
+        variantLoading.value = true
+        pollTask(t.id, (r) => {
+          variantLoading.value = false
+          variants.value = r.variants || []
+          if (r.original) variantOriginal.value = r.original
+        })
+      }
+    }
+  } catch {}
+}
 
 const openVariants = (item) => {
   variantWrongId.value = item.id
@@ -154,12 +226,23 @@ const generateVariants = async () => {
   if (!variantWrongId.value) return
   variantLoading.value = true
   try {
-    const res = await api.post(`/wrong-questions/${variantWrongId.value}/variants`, null, { params: { count: 3 } })
-    variants.value = res.variants || []
-    if (res.original) variantOriginal.value = res.original
+    const res = await api.post('/ai-tasks', {
+      task_type: 'variant',
+      wrong_question_id: variantWrongId.value,
+      count: 3,
+    })
+    variantTaskId.value = res.task_id
+    ElMessage.success('已提交后台生成，完成后会通知你（可以先去看别的）')
+    pollTask(res.task_id,
+      (r) => {
+        variantLoading.value = false
+        variants.value = r.variants || []
+        if (r.original) variantOriginal.value = r.original
+        ElMessage.success(`已生成 ${r.count || 0} 道变式题`)
+      },
+      (e) => { variantLoading.value = false; ElMessage.error('生成失败：' + e) }
+    )
   } catch {
-    variants.value = []
-  } finally {
     variantLoading.value = false
   }
 }
@@ -196,11 +279,23 @@ const toggleAI = async (id) => {
 const askAI = async (id, followUpText) => {
   aiLoading[id] = true
   try {
-    const res = await api.post('/wrong-questions/ai-explain', {
+    const res = await api.post('/ai-tasks', {
+      task_type: 'explain',
       wrong_question_id: id,
-      follow_up: followUpText,
+      follow_up: followUpText || null,
     })
-    aiReply[id] = res.reply
+    aiPending[id] = res.task_id
+    ElMessage.success('讲解已提交后台生成，完成后会在「消息通知」提醒你')
+    pollTask(res.task_id,
+      (r) => {
+        aiReply[id] = r.reply
+        delete aiPending[id]
+      },
+      (e) => {
+        ElMessage.error('讲解生成失败：' + e)
+        delete aiPending[id]
+      }
+    )
   } catch {
   } finally {
     aiLoading[id] = false
@@ -301,5 +396,13 @@ const exportExcel = () => {
   })
 }
 
-onMounted(loadList)
+onMounted(() => { loadList(); resumePendingTasks() })
+
+onUnmounted(() => {
+  Object.keys(taskTimers).forEach(stopPolling)
+})
+
+onUnmounted(() => {
+  Object.keys(taskTimers).forEach(stopPolling)
+})
 </script>

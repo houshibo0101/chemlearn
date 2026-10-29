@@ -47,6 +47,11 @@ def _byte_size(text: str) -> int:
     return len(text.encode("utf-8"))
 
 
+def _explain_model() -> str:
+    """解析类任务（错题讲解等）使用的模型：AI_EXPLAIN_MODEL 优先，留空则回退 AI_MODEL"""
+    return getattr(settings, "AI_EXPLAIN_MODEL", "") or settings.AI_MODEL
+
+
 class AIService:
     # ========== 对话历史管理 ==========
 
@@ -204,9 +209,11 @@ class AIService:
         history: Optional[List[ChatMessage]] = None,
         context: Optional[str] = None,
         raise_on_error: bool = True,
+        model: Optional[str] = None,
     ) -> Tuple[str, dict]:
         """
         返回 (回复内容, token使用信息)。
+        model 不传则用 settings.AI_MODEL（问答/生成类）；解析类任务由调用方传 AI_EXPLAIN_MODEL。
         raise_on_error=True：调用失败抛 AIError（供程序化调用方捕获后明确报错，
         避免错误文案被当作 AI 回复去解析导致误导性的"JSON解析失败"）；
         raise_on_error=False：保持旧行为，把可读的错误文案作为回复返回（聊天页展示用）。
@@ -216,6 +223,8 @@ class AIService:
             if raise_on_error:
                 raise AIError("AI 服务未配置（缺少 AI_API_KEY）")
             return msg, {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+
+        used_model = model or settings.AI_MODEL
 
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         if context:
@@ -248,7 +257,7 @@ class AIService:
                     f"{settings.AI_API_BASE}/chat/completions",
                     headers={"Authorization": f"Bearer {settings.AI_API_KEY}"},
                     json={
-                        "model": settings.AI_MODEL,
+                        "model": used_model,
                         "messages": messages,
                         "temperature": 0.7,
                     },
@@ -340,12 +349,14 @@ class AIService:
         else:
             message = "请详细讲解这道题的解题思路，分析学生错误的原因，并给出相关知识点总结。"
 
-        reply, token_info = await AIService.chat(message=message, context="\n".join(context_parts))
+        reply, token_info = await AIService.chat(
+            message=message, context="\n".join(context_parts), model=_explain_model()
+        )
 
         # 记录 token 消耗
         usage = AIUsage(
             user_id=user_id,
-            model=settings.AI_MODEL,
+            model=_explain_model(),
             prompt_tokens=token_info["prompt_tokens"],
             completion_tokens=token_info["completion_tokens"],
             total_tokens=token_info["total_tokens"],

@@ -17,12 +17,9 @@ import sys
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-# 后端源码：仓库内即 ../../backend/app；也兼容「脚本被放回部署工具目录」的旧布局
-_CANDIDATES = [
-    os.path.join(os.path.dirname(os.path.dirname(HERE)), "backend", "app"),
-    os.path.join(os.path.dirname(os.path.dirname(HERE)), "化学", "01-源代码", "backend", "app"),
-]
-BACKEND_APP = next((p for p in _CANDIDATES if os.path.isdir(p)), _CANDIDATES[0])
+# 后端源码（payload 就是从它打包的），用来推导真正需要打进 exe 的模块
+BACKEND_APP = os.path.join(
+    os.path.dirname(os.path.dirname(HERE)), "化学", "01-源代码", "backend", "app")
 
 COLLECT = ["fastapi", "starlette", "uvicorn", "passlib"]
 
@@ -115,7 +112,24 @@ EXCLUDE = [
 ]
 
 
+# 后端启动必需、缺一个就起不来的包。构建前先自检，避免打出一个「一跑就 ModuleNotFoundError」的 exe
+REQUIRED = [
+    "fastapi", "starlette", "uvicorn", "sqlalchemy", "jwt",
+    "passlib", "bcrypt", "aiosqlite", "greenlet", "pydantic",
+    "pydantic_settings", "psutil", "multipart", "email_validator",
+    "openpyxl", "httpx", "dotenv",
+]
+
+
 def main():
+    import importlib.util
+    missing = [m for m in REQUIRED if importlib.util.find_spec(m) is None]
+    if missing:
+        print("构建中止：当前解释器缺少运行期依赖 %s" % ", ".join(missing))
+        print("  解释器：%s" % sys.executable)
+        print("  先执行：%s -m pip install %s" % (sys.executable, " ".join(missing)))
+        return 1
+
     scanned = scan_imports(BACKEND_APP)
     # 过滤掉 "from fastapi import APIRouter" 这类把类名当子模块的假阳性
     import importlib.util

@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     AI_API_BASE: str = "https://api.openai.com/v1"
     AI_API_KEY: str = ""
     AI_MODEL: str = "gpt-4o-mini"
+    # 解析类任务（错题讲解、题目解析）单独指定模型；留空则沿用 AI_MODEL
+    # 注意：套卷生成（PDF→题目→HTML）走 AI_MODEL，不走这个
+    AI_EXPLAIN_MODEL: str = ""
     AI_TIMEOUT: int = 60
 
     # AI独立服务（拆分部署时配置，留空则使用本地AIService）

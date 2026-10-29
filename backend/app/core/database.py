@@ -29,7 +29,7 @@ async def get_db():
 
 async def init_db():
     """初始化数据库表"""
-    from app.models import user, question, wrong_question, api_key, chat_history, ai_usage  # noqa
+    from app.models import user, question, wrong_question, api_key, chat_history, ai_usage, paper, favorite, ai_task  # noqa
     async with engine.begin() as conn:
         # SQLite开启WAL模式，提升并发写入性能
         if "sqlite" in settings.DATABASE_URL:

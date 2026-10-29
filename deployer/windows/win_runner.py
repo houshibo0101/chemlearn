@@ -14,6 +14,7 @@
 import argparse
 import importlib
 import os
+import shutil
 import socket
 import sys
 import tarfile
@@ -43,7 +44,7 @@ import email_validator  # noqa: F401
 import httpx  # noqa: F401
 import dotenv  # noqa: F401
 
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 APP_NAME = "ChemLearnWindows"
 # 前端产物把资源与接口路径硬编码为 /chem/...，本机运行没有 nginx 去前缀，
 # 因此用中间件把 /chem/xxx 改写成 /xxx（前端零改动，与线上行为一致）
@@ -70,12 +71,28 @@ def log(msg):
         pass   # 控制台编码不支持中文时不至于直接崩溃
 
 
+def _payload_fingerprint():
+    """用「版本号 + payload 大小/时间」当指纹，换了新 exe 就能识别出来。"""
+    try:
+        st = os.stat(PAYLOAD)
+        return "%s-%d-%d" % (VERSION, st.st_size, int(st.st_mtime))
+    except OSError:
+        return VERSION
+
+
 def extract_payload(force=False):
-    ready = os.path.exists(MARKER) and os.path.isdir(BACKEND_DIR)
-    if ready and not force:
+    fp = _payload_fingerprint()
+    try:
+        with open(MARKER, encoding="utf-8") as f:
+            marker_fp = f.read().strip()
+    except OSError:
+        marker_fp = ""
+
+    first_run = not os.path.isdir(BACKEND_DIR)
+    if not force and not first_run and marker_fp == fp:
         return
+
     if force:
-        import shutil
         for name in ("化学", "portal", "deploy", ".extracted"):
             p = os.path.join(DATA_ROOT, name)
             if os.path.isdir(p):
@@ -85,15 +102,27 @@ def extract_payload(force=False):
                     os.remove(p)
                 except OSError:
                     pass
-    log("首次运行，正在解压运行时文件（约 2 秒）...")
+        log("按 --reset 清空运行时目录，重新解压 ...")
+    elif first_run:
+        log("首次运行，正在解压运行时文件（约 2 秒）...")
+    else:
+        # 升级：清掉旧前端产物（文件名带哈希，不换会一直用旧 UI），数据库原样保留
+        shutil.rmtree(os.path.join(DATA_ROOT, "化学", "web"), ignore_errors=True)
+        log("检测到新版本，正在更新运行时文件（数据库保留）...")
+
     os.makedirs(DATA_ROOT, exist_ok=True)
+    db_path = os.path.join(DATA_ROOT, "化学", "backend", "chemlearn.db")
     with tarfile.open(PAYLOAD, "r:gz") as tar:
-        try:
-            tar.extractall(DATA_ROOT, filter="data")  # py3.12+ 安全解压
-        except TypeError:
-            tar.extractall(DATA_ROOT)
+        for m in tar.getmembers():
+            # 升级时不覆盖已有的数据库，避免把用户题库清成种子数据
+            if not force and m.name.endswith("化学/backend/chemlearn.db") and os.path.exists(db_path):
+                continue
+            try:
+                tar.extract(m, DATA_ROOT, filter="data")  # py3.12+ 安全解压
+            except TypeError:
+                tar.extract(m, DATA_ROOT)
     with open(MARKER, "w", encoding="utf-8") as f:
-        f.write(VERSION)
+        f.write(fp)
     log("解压完成：" + DATA_ROOT)
 
 

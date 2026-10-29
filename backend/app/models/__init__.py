@@ -11,6 +11,9 @@ from app.models.api_call_log import APICallLog
 from app.models.offline_bind import OfflineBind
 from app.models.practice_record import PracticeRecord
 from app.models.notification import Notification
+from app.models.paper import Paper, PaperAttempt, PaperStatus, PaperGenStatus
+from app.models.favorite import Favorite
+from app.models.ai_task import AITask
 
 __all__ = ["User", "UserRole", "Question", "QuestionType", "Difficulty", "WrongQuestion", "APIKey", "ChatHistory", "AIUsage",
            "ClassRoom", "TeacherClass", "Assignment", "AssignmentClass", "AssignmentSubmission", "AssignmentStatus",

@@ -18,6 +18,9 @@ from app.api.knowledge_graph import router as knowledge_graph_router
 from app.api.question_ext import router as question_ext_router
 from app.api.practice_records import router as practice_records_router
 from app.api.notifications import router as notifications_router
+from app.api.papers import router as papers_router
+from app.api.favorites import router as favorites_router
+from app.api.ai_tasks import router as ai_tasks_router
 
 __all__ = [
     "auth_router", "questions_router", "wrong_questions_router",
@@ -27,4 +30,5 @@ __all__ = [
     "admin_dashboard_router", "question_import_router", "open_platform_v2_router",
     "knowledge_graph_router",
     "question_ext_router", "practice_records_router", "notifications_router",
+    "papers_router", "favorites_router", "ai_tasks_router",
 ]

@@ -149,26 +149,36 @@ const switchTab = (tab) => {
 }
 
 const handleLogin = async () => {
-  await loginFormRef.value.validate()
+  try {
+    await loginFormRef.value.validate()
+  } catch {
+    return // 表单校验未通过，字段下方已标红
+  }
   loginLoading.value = true
   try {
     await userStore.login(loginForm.username, loginForm.password)
     ElMessage.success('登录成功')
     router.push('/')
+  } catch {
+    // 具体原因由 api 拦截器提示（如「用户名或密码错误，剩余尝试次数：4」）
   } finally {
     loginLoading.value = false
   }
 }
 
 const handleRegister = async () => {
-  await registerFormRef.value.validate()
+  try {
+    await registerFormRef.value.validate()
+  } catch {
+    return
+  }
   registerLoading.value = true
   try {
     await userStore.register(registerForm)
     ElMessage.success('注册成功')
     router.push('/')
-  } catch (e) {
-    ElMessage.error(e.response?.data?.detail || e.message || '注册失败')
+  } catch {
+    // 同上，错误文案由拦截器统一给出（用户名已存在 / 邮箱已被注册 等）
   } finally {
     registerLoading.value = false
   }
