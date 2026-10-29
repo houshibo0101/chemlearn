@@ -7,7 +7,7 @@
 
 前后端分离，单机可跑，数据存放在 SQLite，不需要额外安装数据库。
 
-![首页](docs/app-home.png)
+![首页](docs/home.png)
 
 ---
 
