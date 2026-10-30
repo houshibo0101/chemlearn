@@ -11,6 +11,20 @@
 
 ---
 
+## 下载
+
+一键部署工具（无需安装 Python，双击即用）单独发布，不放仓库以免体积膨胀：
+
+| 文件 | 平台 | 说明 |
+|---|---|---|
+| [ChemLearn-Deployer-v1.3.0.exe](https://github.com/houshibo0101/chemlearn/releases/latest) | Linux 服务器 | 填 IP、SSH 密码和 AI Key，自动装好 nginx / Python / systemd，3–6 分钟完成 |
+| [题库数据包 453 题](https://github.com/houshibo0101/chemlearn/releases/tag/question-bank-v1) | 通用 | 解压到 `backend/import_data/` 后跑导入脚本 |
+
+> 部署器内置完整部署包（源码 + 前端 + 依赖清单），目标机只需能联网的 Ubuntu / Debian。
+> AI 配置在部署时写入，装完即可用。
+
+---
+
 ## 功能
 
 | 模块 | 说明 |
