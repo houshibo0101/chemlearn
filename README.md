@@ -11,6 +11,22 @@
 
 ---
 
+## 文档
+
+完整使用文档在 **[Wiki](https://github.com/houshibo0101/chemlearn/wiki)**：
+
+| 文档 | 内容 |
+|---|---|
+| [快速开始](https://github.com/houshibo0101/chemlearn/wiki/Quick-Start) | 三种部署方式的完整步骤 |
+| [功能说明](https://github.com/houshibo0101/chemlearn/wiki/Features) | 学生 / 老师 / 管理员各能做什么 |
+| [套卷练习](https://github.com/houshibo0101/chemlearn/wiki/Exam-Papers) | 上传试卷 → AI 生成做题页 → 判分 → 反作弊 |
+| [AI 配置](https://github.com/houshibo0101/chemlearn/wiki/AI-Setup) | 双模型分工、换模型、报错对照 |
+| [部署指南](https://github.com/houshibo0101/chemlearn/wiki/Deployment) | 端口、systemd、nginx、备份、升级 |
+| [常见问题](https://github.com/houshibo0101/chemlearn/wiki/FAQ) | 登录、AI、上传、性能 |
+| [开发指南](https://github.com/houshibo0101/chemlearn/wiki/Development) | 目录结构、本地运行、踩过的坑 |
+
+---
+
 ## 下载
 
 一键部署工具（无需安装 Python，双击即用）单独发布，不放仓库以免体积膨胀：
