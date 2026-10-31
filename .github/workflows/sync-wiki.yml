@@ -1,0 +1,51 @@
+name: Sync Wiki
+
+# 把 docs/wiki/ 下的 Markdown 同步到 GitHub Wiki
+# 这样不依赖本地网络，由 GitHub 的 runner 完成推送
+
+on:
+  push:
+    paths:
+      - 'docs/wiki/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Push to wiki
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          WIKI_DIR=$(mktemp -d)
+          WIKI_URL="https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git"
+
+          if ! git clone "$WIKI_URL" "$WIKI_DIR" 2>/dev/null; then
+            echo "::error::Wiki 仓库还不存在。请先在 https://github.com/${GITHUB_REPOSITORY}/wiki 点「Create the first page」创建首页。"
+            exit 1
+          fi
+
+          cp docs/wiki/*.md "$WIKI_DIR/"
+          cd "$WIKI_DIR"
+
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Wiki 内容已是最新，无需推送"
+            exit 0
+          fi
+
+          git add -A
+          git commit -m "docs: 同步 Wiki（来自 docs/wiki）"
+          git push
+
+          echo "已同步以下页面："
+          ls -1 *.md
