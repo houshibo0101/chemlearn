@@ -33,10 +33,12 @@
 
 | 文件 | 平台 | 说明 |
 |---|---|---|
-| [ChemLearn-Deployer-v1.3.0.exe](https://github.com/houshibo0101/chemlearn/releases/latest) | Linux 服务器 | 填 IP、SSH 密码和 AI Key，自动装好 nginx / Python / systemd，3–6 分钟完成 |
+| [ChemLearn-Deployer-v1.3.0.exe](https://github.com/houshibo0101/chemlearn/releases/tag/v1.3.0) | Linux 服务器 | 填 IP、SSH 密码和 AI Key，自动装好 nginx / Python / systemd，3–6 分钟完成 |
+| [ChemLearnWindows-v2.0.0.exe](https://github.com/houshibo0101/chemlearn/releases/tag/windows-v2.0.0) | Windows 本机 | 双击部署到本机，界面里看地址 / 开系统 / 重置，局域网可访问 |
 | [题库数据包 453 题](https://github.com/houshibo0101/chemlearn/releases/tag/question-bank-v1) | 通用 | 解压到 `backend/import_data/` 后跑导入脚本 |
 
-> 部署器内置完整部署包（源码 + 前端 + 依赖清单），目标机只需能联网的 Ubuntu / Debian。
+> Linux 部署器内置完整部署包（源码 + 前端 + 依赖清单），目标机只需能联网的 Ubuntu / Debian。
+> Windows 部署器把依赖和题库全部打进 exe（约 87 MB），目标机完全离线也能用。
 > AI 配置在部署时写入，装完即可用。
 
 ---
@@ -61,7 +63,7 @@
 - **后端**：FastAPI · SQLAlchemy 2.x（async + aiosqlite）· Pydantic v2 · Passlib/bcrypt · PyJWT
 - **前端**：Vue 3 · Vite · Element Plus · ECharts · KaTeX
 - **打包安装**：Capacitor（Android）
-- **部署**：nginx 反向代理 + systemd；另提供 SSH 一键部署器与 Windows 单文件运行器
+- **部署**：nginx 反向代理 + systemd；另提供 SSH 一键部署器与 Windows 本机部署器
 
 ## 目录结构
 
@@ -81,7 +83,7 @@ chemlearn/
 ├── web/                    # Vue 3 前端（含 Capacitor Android 工程）
 ├── deployer/
 │   ├── linux/              # SSH 一键部署器（deployer.py 六学科版 / deployer_chem.py 纯化学版）
-│   └── windows/            # Windows 单文件运行器（PyInstaller）
+│   └── windows/            # Windows 本机部署器（PyInstaller 单文件 exe，图形界面）
 └── docs/                   # 截图
 ```
 
@@ -159,21 +161,28 @@ python deployer/linux/deployer_chem.py         # 启动部署器界面 http://12
 python deployer/linux/deployer_chem.py --host 10.0.0.10 --user root --password '***' --web-port 80
 ```
 
-### Windows 单文件运行
+### Windows 本机一键部署
 
-`deployer/windows/` 把后端 + 前端 + 题库打成一个 exe，双击即可在本机跑起来，局域网可访问，
-无需安装 Python。
+`deployer/windows/` 把前端、后端和题库打成一个 exe，双击即可在本机部署整套系统，
+无需安装 Python / 数据库，局域网内其它设备也能访问。
 
 ```bash
-pip install pyinstaller
-python deployer/windows/build_win.py           # 需要 payload_chem.tar.gz 放在同目录
-# 产物 deployer/windows/out/ChemLearnWindows.exe
+python -m venv deployer/windows/.buildenv
+deployer/windows/.buildenv/Scripts/python -m pip install -r deployer/windows/requirements-build.txt
+deployer/windows/.buildenv/Scripts/python deployer/windows/build_win.py --with-payload --fresh
+# 产物 deployer/windows/out/ChemLearnWindows.exe（约 87 MB，单文件）
 ```
 
-运行：`ChemLearnWindows.exe [--port 8000] [--no-browser] [--reset]`，
-首次运行解压到 `%LOCALAPPDATA%\ChemLearnWindows`，数据即保存在该目录。
+运行：`ChemLearnWindows.exe [--port 8000] [--no-browser] [--reset]`。
 
-![部署器](docs/deployer-success.png)
+- 首次运行把运行时解压到 `%LOCALAPPDATA%\ChemLearnWindows`，数据库存在 `backend\chemlearn.db`
+- 窗口里可以直接：打开系统、复制局域网地址、打开数据目录、停止服务、重新部署
+- 换新 exe 直接双击即可升级，程序会更新而数据库保留；`--reset` 才清空数据
+- 默认账号 `admin / admin123`，登录后请到个人中心修改
+
+详细操作、防火墙设置、备份与卸载见 [`deployer/windows/使用说明.txt`](deployer/windows/使用说明.txt)。
+
+![Windows 部署器](docs/deployer-windows.png)
 
 ## 默认账号与安全提醒
 

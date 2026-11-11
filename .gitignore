@@ -21,8 +21,13 @@ build/
 # ---------- 部署包与可执行文件 ----------
 payload_chem.tar.gz
 deployer/linux/build/
+deployer/windows/build/
 deployer/windows/out/
 deployer/windows/dist/
+deployer/windows/.buildenv/
+deployer/windows/.testdata*/
+deployer/windows/app-preview-40.png
+deployer/windows/shot_*.png
 *.exe
 *.pkg
 *.pyz
