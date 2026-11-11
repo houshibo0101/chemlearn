@@ -243,6 +243,7 @@ const avgBottom = computed(() => `${Math.min(96, (avgTotal.value / maxTotal.valu
 const quickEntries = computed(() => {
   if (role.value === 'student') {
     return [
+      { title: '化学连连看', desc: '配对物质、官能团与方程式', to: '/matching', icon: 'Grid' },
       { title: '错题本', desc: '回顾做错的题，逐个击破', to: '/wrong', icon: 'Warning' },
       { title: 'AI 问答', desc: '把不会的题讲明白', to: '/ai', icon: 'ChatDotRound' },
       { title: '我的作业', desc: '查看待完成的作业', to: '/student/assignments', icon: 'Document' },
@@ -251,6 +252,7 @@ const quickEntries = computed(() => {
   }
   if (role.value === 'teacher') {
     return [
+      { title: '连连看管理', desc: '创建配对关卡、看学生成绩', to: '/matching/manage', icon: 'Grid' },
       { title: '班级管理', desc: '建班、邀请学生、看进度', to: '/teacher/classes', icon: 'School' },
       { title: '作业管理', desc: '布置与批改作业', to: '/teacher/assignments', icon: 'Document' },
       { title: '学生错题', desc: '按班级查看共性错题', to: '/teacher/wrong-questions', icon: 'Warning' },
@@ -258,6 +260,7 @@ const quickEntries = computed(() => {
     ]
   }
   return [
+    { title: '连连看管理', desc: '管理全校的配对关卡', to: '/matching/manage', icon: 'Grid' },
     { title: '错题本', desc: '全部错题与导出', to: '/wrong', icon: 'Warning' },
     { title: 'AI 问答', desc: '化学问题随时问', to: '/ai', icon: 'ChatDotRound' },
     { title: '班级管理', desc: '班级与学生概况', to: '/teacher/classes', icon: 'School' },

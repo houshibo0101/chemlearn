@@ -14,8 +14,12 @@ from app.models.notification import Notification
 from app.models.paper import Paper, PaperAttempt, PaperStatus, PaperGenStatus
 from app.models.favorite import Favorite
 from app.models.ai_task import AITask
+from app.models.matching import (
+    MatchingSet, MatchingPair, MatchingRecord, CATEGORY_LABELS, DIFFICULTY_LABELS,
+)
 
 __all__ = ["User", "UserRole", "Question", "QuestionType", "Difficulty", "WrongQuestion", "APIKey", "ChatHistory", "AIUsage",
            "ClassRoom", "TeacherClass", "Assignment", "AssignmentClass", "AssignmentSubmission", "AssignmentStatus",
            "Exam", "ExamClass", "ExamQuestion", "ExamSubmission", "ExamStatus", "APICallLog", "OfflineBind",
-           "PracticeRecord", "Notification"]
+           "PracticeRecord", "Notification", "Favorite", "AITask",
+           "MatchingSet", "MatchingPair", "MatchingRecord", "CATEGORY_LABELS", "DIFFICULTY_LABELS"]

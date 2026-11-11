@@ -39,8 +39,8 @@ STAGE = os.path.join(HERE, "build", "payload")
 IGNORE = shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyo", ".git",
                                 "node_modules", ".venv", ".DS_Store")
 
-# 这些表承载题库本身，清洗时保留
-KEEP_TABLES = {"questions", "users"}
+# 这些表承载题库 / 连连看关卡本身，清洗时保留
+KEEP_TABLES = {"questions", "users", "matching_sets", "matching_pairs"}
 
 
 def read_version():
@@ -80,6 +80,9 @@ def sanitize_db(src, dst, keep_users=False):
                     con.execute("delete from '%s'" % table)
             # 题目创建者统一指回内置管理员，避免悬空外键
             con.execute("update questions set creator_id = ?", (admin[0],))
+            # 连连看关卡也归到内置管理员（老师创建的关卡在分发版里保留内容）
+            if "matching_sets" in tables:
+                con.execute("update matching_sets set creator_id = ?", (admin[0],))
             # 有 AUTOINCREMENT 才有 sqlite_sequence，重置它让新库 id 从 1 开始
             has_seq = con.execute(
                 "select 1 from sqlite_master where type='table' "
@@ -98,6 +101,8 @@ def sanitize_db(src, dst, keep_users=False):
             "users_before": before.get("users", 0),
             "users_after": after.get("users", 0),
             "questions": after.get("questions", 0),
+            "matching_sets": after.get("matching_sets", 0),
+            "matching_pairs": after.get("matching_pairs", 0),
             "rows_removed": sum(before.values()) - sum(after.values()),
             "admin": admin[1],
         }
@@ -198,6 +203,8 @@ def main():
     print("  文件数    %d" % meta["files"])
     print("  题库      %d 题（其中 %d 题带图片字段）"
           % (stats["questions"], stats["questions_with_images"]))
+    print("  连连看    %d 套关卡 / %d 对（作答记录已清空）"
+          % (stats["matching_sets"], stats["matching_pairs"]))
     print("  账号      %d -> %d（%s）"
           % (stats["users_before"], stats["users_after"], stats["admin"]))
     print("  清理行数  %d" % stats["rows_removed"])

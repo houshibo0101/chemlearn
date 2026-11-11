@@ -34,7 +34,7 @@
 | 文件 | 平台 | 说明 |
 |---|---|---|
 | [ChemLearn-Deployer-v1.3.0.exe](https://github.com/houshibo0101/chemlearn/releases/tag/v1.3.0) | Linux 服务器 | 填 IP、SSH 密码和 AI Key，自动装好 nginx / Python / systemd，3–6 分钟完成 |
-| [ChemLearnWindows-v2.0.0.exe](https://github.com/houshibo0101/chemlearn/releases/tag/windows-v2.0.0) | Windows 本机 | 双击部署到本机，界面里看地址 / 开系统 / 重置，局域网可访问 |
+| [ChemLearnWindows-v2.1.0.exe](https://github.com/houshibo0101/chemlearn/releases/tag/windows-v2.1.0) | Windows 本机 | 双击部署到本机，界面里看地址 / 开系统 / 重置，局域网可访问 |
 | [题库数据包 453 题](https://github.com/houshibo0101/chemlearn/releases/tag/question-bank-v1) | 通用 | 解压到 `backend/import_data/` 后跑导入脚本 |
 
 > Linux 部署器内置完整部署包（源码 + 前端 + 依赖清单），目标机只需能联网的 Ubuntu / Debian。
@@ -48,6 +48,7 @@
 | 模块 | 说明 |
 |---|---|
 | 刷题 | 按章节 / 题型 / 难度筛选，支持顺序练习与随机组卷，答题即时判分 |
+| 化学连连看 | 物质 / 官能团 / 方程式 / 俗称配对闯关，计时计分、连击、排行榜，老师可上传关卡 |
 | 错题本 | 自动收录错题，支持重做、导出 Excel |
 | AI 问答 | 接入大模型 API，针对题目做讲解（Key 可在管理端配置） |
 | 班级管理 | 建班、邀请学生、查看班级练习情况 |
@@ -57,6 +58,25 @@
 | 学习报告 | 个人与班级维度的正确率、知识点掌握度统计 |
 | 消息通知 | 站内通知推送 |
 | API 开放平台 | 为第三方应用签发 API Key，按 scope 与日限额调用 |
+
+### 化学连连看
+
+把**物质与俗名、官能团与性质、化学方程式与实验现象、名称与化学式**做成配对关卡：
+2–30 对卡片打乱后，找出属于同一对的两张，全部配完按用时、错误次数和连击计分，
+配对成功会显示知识点解析。
+
+- 学生：选关卡 → 配对 → 看解析与排行榜
+- 老师 / 管理员：手动录入、批量粘贴，或上传 Excel / CSV / TXT 建关卡；按关卡看学生成绩
+- 内置 4 套示例关卡（俗名 / 官能团 / 方程式 / 化学式），也可执行 `backend/seed_matching.py` 重新灌入
+
+<p>
+  <img src="docs/matching-list.png" width="49%" alt="连连看关卡列表" />
+  <img src="docs/matching-play.png" width="49%" alt="连连看配对界面" />
+</p>
+<p>
+  <img src="docs/matching-editor.png" width="49%" alt="老师新建关卡" />
+  <img src="docs/matching-manage.png" width="49%" alt="关卡管理与成绩" />
+</p>
 
 ## 技术栈
 
@@ -178,6 +198,7 @@ deployer/windows/.buildenv/Scripts/python deployer/windows/build_win.py --with-p
 - 首次运行把运行时解压到 `%LOCALAPPDATA%\ChemLearnWindows`，数据库存在 `backend\chemlearn.db`
 - 窗口里可以直接：打开系统、复制局域网地址、打开数据目录、停止服务、重新部署
 - 换新 exe 直接双击即可升级，程序会更新而数据库保留；`--reset` 才清空数据
+- 内置 4 套化学连连看示例关卡，装好即可直接玩
 - 默认账号 `admin / admin123`，登录后请到个人中心修改
 
 详细操作、防火墙设置、备份与卸载见 [`deployer/windows/使用说明.txt`](deployer/windows/使用说明.txt)。

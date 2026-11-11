@@ -16,6 +16,7 @@ from app.api import (
     offline_router, stats_router, admin_dashboard_router, question_import_router,
     open_platform_v2_router, knowledge_graph_router, question_ext_router,
     practice_records_router, notifications_router, papers_router, favorites_router, ai_tasks_router,
+    matching_router,
 )
 
 
@@ -38,13 +39,31 @@ async def ensure_admin():
             print(f"[初始化] 内置管理员账号已创建: {settings.ADMIN_USERNAME} / {settings.ADMIN_PASSWORD}")
         else:
             print(f"[初始化] 内置管理员账号已存在: {settings.ADMIN_USERNAME}")
+        return admin
+
+
+async def _matching_table_exists() -> bool:
+    """连连看表是否已经存在（用来区分“新装/旧版升级”和“管理员删光了关卡”）"""
+    from sqlalchemy import inspect
+    from app.core.database import engine
+    async with engine.connect() as conn:
+        return await conn.run_sync(
+            lambda sync_conn: inspect(sync_conn).has_table("matching_sets"))
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 启动
+    matching_was_there = await _matching_table_exists()
     await init_db()
-    await ensure_admin()
+    admin = await ensure_admin()
+    if not matching_was_there and admin is not None:
+        # 从旧版本升级（或首次建表）时补上示例关卡；管理员主动删空不会触发
+        from app.services.matching_seed import seed_matching
+        async with AsyncSessionLocal() as db:
+            created = await seed_matching(db, admin.id)
+        if created:
+            print(f"[连连看] 已初始化 {created} 套示例关卡")
     yield
     # 关闭
 
@@ -134,6 +153,7 @@ app.include_router(notifications_router, prefix=prefix)
 app.include_router(papers_router, prefix=prefix)
 app.include_router(favorites_router, prefix=prefix)
 app.include_router(ai_tasks_router, prefix=prefix)
+app.include_router(matching_router, prefix=prefix)
 
 
 @app.get("/", tags=["根"])
