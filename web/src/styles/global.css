@@ -417,6 +417,10 @@ p { line-height: 1.75; }
   border-radius: var(--radius-md);
   font-size: 13.5px;
 }
+/* 暗色下 brand-50 仍是浅色，表格行 hover 会整行发白（行内按钮也随之看不清） */
+html.dark .el-table {
+  --el-table-row-hover-bg-color: var(--bg-hover);
+}
 .el-table th.el-table__cell {
   font-weight: 700;
   font-size: 12.5px;
