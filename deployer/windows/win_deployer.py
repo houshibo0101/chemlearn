@@ -16,7 +16,7 @@
     ChemLearnWindows.exe --reset            重新部署（清空用户数据，恢复内置题库）
     ChemLearnWindows.exe --console          纯命令行模式（排障用，窗口里能看到日志）
 """
-VERSION = "2.1.0"
+VERSION = "2.1.1"
 APP_NAME = "化学学习系统"
 DATA_FOLDER = "ChemLearnWindows"
 PAYLOAD_NAME = "payload_chem.tar.gz"

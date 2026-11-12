@@ -323,6 +323,12 @@ onMounted(() => loadAll())
   color: var(--brand-600);
   transform: translateY(-1px);
 }
+/* 暗色模式下 brand-50 仍是浅色，hover 会变成一块白底；改成半透明靛蓝 */
+html.dark .nav-chip:hover {
+  background: rgba(99, 102, 241, 0.18);
+  border-color: var(--brand-500);
+  color: var(--brand-300);
+}
 
 /* 板块锚点 */
 .section-anchor { scroll-margin-top: 84px; }
