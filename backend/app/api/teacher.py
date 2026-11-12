@@ -131,26 +131,32 @@ async def get_my_classes(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """获取老师管理的班级"""
-    if current_user.role != UserRole.TEACHER:
-        raise HTTPException(403, "仅老师可访问")
+    """获取老师管理的班级（管理员返回全部班级）"""
+    if current_user.role not in (UserRole.TEACHER, UserRole.ADMIN):
+        raise HTTPException(403, "仅老师或管理员可访问")
 
-    class_ids = (await db.execute(
-        select(TeacherClass.class_id).where(TeacherClass.teacher_id == current_user.id)
-    )).scalars().all()
+    if current_user.role == UserRole.ADMIN:
+        class_rows = (await db.execute(select(ClassRoom))).scalars().all()
+    else:
+        class_ids = (await db.execute(
+            select(TeacherClass.class_id).where(TeacherClass.teacher_id == current_user.id)
+        )).scalars().all()
+        class_rows = []
+        for cid in class_ids:
+            c = (await db.execute(select(ClassRoom).where(ClassRoom.id == cid))).scalar_one_or_none()
+            if c:
+                class_rows.append(c)
 
     classes = []
-    for cid in class_ids:
-        c = (await db.execute(select(ClassRoom).where(ClassRoom.id == cid))).scalar_one_or_none()
-        if c:
-            student_count = (await db.execute(
-                select(func.count(User.id)).where(User.class_id == cid, User.role == UserRole.STUDENT)
-            )).scalar()
-            classes.append({
-                "id": c.id,
-                "name": c.name,
-                "grade": c.grade,
-                "student_count": student_count or 0,
-            })
+    for c in class_rows:
+        student_count = (await db.execute(
+            select(func.count(User.id)).where(User.class_id == c.id, User.role == UserRole.STUDENT)
+        )).scalar()
+        classes.append({
+            "id": c.id,
+            "name": c.name,
+            "grade": c.grade,
+            "student_count": student_count or 0,
+        })
 
     return {"items": classes, "total": len(classes)}

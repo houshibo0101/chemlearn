@@ -22,6 +22,7 @@ from app.api.papers import router as papers_router
 from app.api.favorites import router as favorites_router
 from app.api.ai_tasks import router as ai_tasks_router
 from app.api.matching import router as matching_router
+from app.api.rankings import router as rankings_router
 
 __all__ = [
     "auth_router", "questions_router", "wrong_questions_router",
@@ -32,4 +33,5 @@ __all__ = [
     "knowledge_graph_router",
     "question_ext_router", "practice_records_router", "notifications_router",
     "papers_router", "favorites_router", "ai_tasks_router", "matching_router",
+    "rankings_router",
 ]

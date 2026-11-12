@@ -17,6 +17,7 @@ from app.api import (
     open_platform_v2_router, knowledge_graph_router, question_ext_router,
     practice_records_router, notifications_router, papers_router, favorites_router, ai_tasks_router,
     matching_router,
+    rankings_router,
 )
 
 
@@ -154,6 +155,7 @@ app.include_router(papers_router, prefix=prefix)
 app.include_router(favorites_router, prefix=prefix)
 app.include_router(ai_tasks_router, prefix=prefix)
 app.include_router(matching_router, prefix=prefix)
+app.include_router(rankings_router, prefix=prefix)
 
 
 @app.get("/", tags=["根"])
