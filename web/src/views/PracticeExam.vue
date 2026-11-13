@@ -96,6 +96,9 @@
 
         <!-- 填空/计算 -->
         <el-input v-else v-model="answers[currentQuestion.id]" type="textarea" :rows="3" placeholder="请输入你的答案" class="fill-input" :disabled="examSubmitted" />
+        <div v-if="answers[currentQuestion.id]" style="margin-top:6px;font-size:12px;color:var(--text-placeholder);">
+          预览：<MathText :text="answers[currentQuestion.id]" inline />
+        </div>
 
         <!-- 交卷后显示结果 -->
         <div v-if="examSubmitted && results[currentQuestion.id]" style="margin-top:20px;">

@@ -62,6 +62,9 @@
             </el-radio-group>
           </div>
           <el-input v-else v-model="answers[q.id]" placeholder="请输入答案" type="textarea" :rows="2" />
+          <div v-if="answers[q.id]" style="margin-top:4px;font-size:12px;color:var(--text-placeholder);">
+            预览：<MathText :text="answers[q.id]" inline />
+          </div>
         </div>
       </div>
 

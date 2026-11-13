@@ -159,7 +159,7 @@
                 <el-icon style="margin-right:4px;"><Plus /></el-icon>添加一对
               </el-button>
               <span class="mm-pairs__hint">当前 {{ validPairCount }} 对有效内容（至少 2 对，最多 30 对）</span>
-              <span class="mm-pairs__hint" style="margin-left:auto;">支持 LaTeX：<code>$H_2SO_4$</code> / <code>\ce{H2SO4}</code></span>
+              <span class="mm-pairs__hint" style="margin-left:auto;">支持自动化学式：<code>H2</code> → H₂，也支持 <code>$H_2SO_4$</code></span>
             </div>
 
             <el-collapse class="mm-bulk">

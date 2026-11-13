@@ -10,6 +10,9 @@
         <input ref="fileInput" type="file" accept=".xlsx,.xls" style="display:none" @change="handleImport" />
       </div>
     </div>
+    <div class="import-note">
+      批量导入的题目同样生效：题干 / 选项 / 解析里的 <code>H2</code>、<code>H2SO4</code> 会自动显示为 H₂、H₂SO₄；答案仍按原文保存，不影响判分。
+    </div>
 
     <!-- 筛选 -->
     <el-card class="page-card">
@@ -113,7 +116,25 @@
         </el-form-item>
         <div class="latex-tip">
           题干 / 选项 / 解析支持 LaTeX：行内 <code>$H_2SO_4$</code>，块级 <code>$$\Delta H < 0$$</code>，
-          化学式可直接写 <code>\ce{2Na + 2H2O -> 2NaOH + H2 ^}</code>
+          化学式可直接写 <code>\ce{2Na + 2H2O -> 2NaOH + H2 ^}</code>；
+          也可以直接输入 <code>H2</code>、<code>Ca(OH)2</code>，会自动显示成 H₂、Ca(OH)₂
+        </div>
+        <div class="auto-preview">
+          <div class="auto-preview__head">
+            效果预览
+            <span>只改变显示，答案判分仍按原文</span>
+          </div>
+          <div v-if="form.title" class="auto-preview__title"><MathText :text="form.title" /></div>
+          <div v-if="form.content" class="auto-preview__row"><MathText :text="form.content" /></div>
+          <div v-for="opt in optionList.filter(o => o.text)" :key="opt.key" class="auto-preview__row">
+            <b>{{ opt.key }}.</b> <MathText :text="opt.text" inline />
+          </div>
+          <div v-if="form.analysis" class="auto-preview__row auto-preview__analysis">
+            <b>解析：</b><MathText :text="form.analysis" />
+          </div>
+          <div v-if="!form.title && !form.content && !form.analysis" class="auto-preview__empty">
+            输入 H2、H2SO4、Ca(OH)2 等，这里会实时显示 H₂、H₂SO₄、Ca(OH)₂
+          </div>
         </div>
         <el-form-item label="题目图片">
           <div style="width:100%;">
@@ -148,6 +169,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import api from '@/api'
+import MathText from '@/components/MathText.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Delete, Download, Upload, Document } from '@element-plus/icons-vue'
 
@@ -373,5 +395,66 @@ onMounted(loadList)
   font-family: Consolas, monospace;
   font-size: 11.5px;
   color: var(--text-secondary);
+}
+</style>
+<style scoped>
+.latex-tip {
+  margin: -6px 0 14px 76px;
+  font-size: 12px;
+  color: var(--text-placeholder);
+  line-height: 1.7;
+}
+.latex-tip code,
+.import-note code {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: Consolas, monospace;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+.import-note {
+  margin: -6px 0 14px;
+  font-size: 12px;
+  color: var(--text-placeholder);
+}
+.auto-preview {
+  margin: 0 0 16px 76px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--bg-tertiary);
+}
+.auto-preview__head {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.auto-preview__head span {
+  margin-left: 8px;
+  font-weight: 400;
+  color: var(--text-placeholder);
+}
+.auto-preview__title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.7;
+}
+.auto-preview__row {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-top: 4px;
+}
+.auto-preview__analysis {
+  border-top: 1px dashed var(--border-light);
+  padding-top: 6px;
+}
+.auto-preview__empty {
+  font-size: 12px;
+  color: var(--text-placeholder);
 }
 </style>

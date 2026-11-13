@@ -1,4 +1,4 @@
-﻿# 化学学习系统 · ChemLearn
+# 化学学习系统 · ChemLearn
 
 [![CI](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml/badge.svg)](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml)
 
@@ -78,15 +78,16 @@
   <img src="docs/matching-manage.png" width="49%" alt="关卡管理与成绩" />
 </p>
 
-### 公式与化学式（LaTeX）
+### 公式与化学式（自动排版）
 
-题干、选项、解析、错题解析、AI 回答、连连看卡片都支持 KaTeX 渲染：
+题干、选项、解析、错题解析、AI 回答、连连看卡片都支持公式渲染，也支持**纯文本化学式自动排版**：
 
-- 行内公式：`$H_2SO_4$`
-- 块级公式：`$$\Delta H < 0$$`
-- 化学式/方程式：直接写 `\ce{2Na + 2H2O -> 2NaOH + H2 ^}`（mhchem 扩展，不必再套 `$`）
+- 直接写 `H2`、`H2SO4`、`Ca(OH)2`，显示为 H₂、H₂SO₄、Ca(OH)₂
+- 结晶水 `CuSO4·5H2O`、有机物 `CH3COOH` 同样识别
+- 电荷用 `^`：`Fe^3+` → Fe³⁺，`SO4^2-` → SO₄²⁻
+- 也支持 LaTeX：行内 `$H_2SO_4$`，块级 `$$\Delta H < 0$$`，化学式 `\ce{2Na + 2H2O -> 2NaOH + H2 ^}`
 
-管理端录入题目或连连看关卡时，直接粘贴上面的写法即可。
+自动排版只改变显示，数据库仍保存原文，因此答案判分不受影响；手动录入（编辑框有实时预览）、批量导入、作业/考试答题预览都会生效。
 
 ## 技术栈
 
