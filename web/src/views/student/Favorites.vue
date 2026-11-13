@@ -38,8 +38,8 @@
               <el-tag size="small" :type="diffColor(item.difficulty)" style="margin-left:6px;">{{ diffText(item.difficulty) }}</el-tag>
               <span v-if="item.knowledge_point" style="margin-left:8px;font-size:12px;color:var(--text-placeholder);">{{ item.knowledge_point }}</span>
             </div>
-            <div style="font-weight:600;font-size:15px;line-height:1.6;color:var(--text-primary);">{{ item.title }}</div>
-            <div v-if="item.content" style="font-size:13px;color:var(--text-secondary);margin-top:6px;white-space:pre-wrap;line-height:1.6;">{{ item.content }}</div>
+            <div style="font-weight:600;font-size:15px;line-height:1.6;color:var(--text-primary);"><MathText :text="item.title" /></div>
+            <div v-if="item.content" style="font-size:13px;color:var(--text-secondary);margin-top:6px;line-height:1.6;"><MathText :text="item.content" /></div>
           </div>
           <el-button text type="danger" size="small" @click="removeFav(item.question_id)">
             <el-icon><Delete /></el-icon>
@@ -64,6 +64,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/api'
+import MathText from '@/components/MathText.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const router = useRouter()

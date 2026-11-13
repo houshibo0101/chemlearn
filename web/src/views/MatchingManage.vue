@@ -159,6 +159,7 @@
                 <el-icon style="margin-right:4px;"><Plus /></el-icon>添加一对
               </el-button>
               <span class="mm-pairs__hint">当前 {{ validPairCount }} 对有效内容（至少 2 对，最多 30 对）</span>
+              <span class="mm-pairs__hint" style="margin-left:auto;">支持 LaTeX：<code>$H_2SO_4$</code> / <code>\ce{H2SO4}</code></span>
             </div>
 
             <el-collapse class="mm-bulk">
@@ -697,12 +698,20 @@ onMounted(load)
 .mm-pairs__foot {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
   padding: 8px 10px;
   background: var(--bg-tertiary);
   border-top: 1px solid var(--border-light);
 }
 .mm-pairs__hint { font-size: 11.5px; color: var(--text-placeholder); }
+.mm-pairs__hint code {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  padding: 0 4px;
+  font-family: Consolas, monospace;
+}
 .mm-bulk { margin: 0 10px 10px; }
 .mm-bulk :deep(.el-collapse-item__header) { font-size: 12px; color: var(--text-secondary); }
 .mm-bulk__actions { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }

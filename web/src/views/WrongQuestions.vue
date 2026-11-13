@@ -27,14 +27,14 @@
 
       <div style="font-size:15px;font-weight:500;margin-bottom:8px;">
         <el-tag size="small" type="info" style="margin-right:8px;">{{ item.question_code || 'Q' + String(item.question_id).padStart(4, '0') }}</el-tag>
-        {{ item.question_title }}
+        <MathText :text="item.question_title" inline />
       </div>
-      <div v-if="item.question_content" style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;white-space:pre-wrap;">{{ item.question_content }}</div>
+      <div v-if="item.question_content" style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;"><MathText :text="item.question_content" /></div>
 
       <el-descriptions :column="1" size="small" border style="margin-bottom:10px;">
-        <el-descriptions-item label="你的答案">{{ item.user_answer || '未作答' }}</el-descriptions-item>
-        <el-descriptions-item label="正确答案">{{ item.correct_answer }}</el-descriptions-item>
-        <el-descriptions-item v-if="item.analysis" label="解析">{{ item.analysis }}</el-descriptions-item>
+        <el-descriptions-item label="你的答案"><MathText :text="item.user_answer || '未作答'" inline /></el-descriptions-item>
+        <el-descriptions-item label="正确答案"><MathText :text="item.correct_answer" inline /></el-descriptions-item>
+        <el-descriptions-item v-if="item.analysis" label="解析"><MathText :text="item.analysis" /></el-descriptions-item>
       </el-descriptions>
 
       <!-- AI讲解 / AI变式 -->
@@ -90,16 +90,16 @@
             <el-tag size="small" type="success">变式 {{ i + 1 }}</el-tag>
             <el-tag size="small" type="info">{{ diffText(v.difficulty) }}</el-tag>
           </div>
-          <div style="font-size:14px;line-height:1.7;white-space:pre-wrap;">{{ v.title }}</div>
+          <div style="font-size:14px;line-height:1.7;"><MathText :text="v.title" /></div>
           <div v-if="v.options && v.options.length" style="margin-top:8px;">
             <div v-for="opt in v.options" :key="opt.key" style="font-size:13.5px;color:var(--text-secondary);line-height:1.8;">
-              <b>{{ opt.key }}.</b> {{ opt.text }}
+              <b>{{ opt.key }}.</b> <MathText :text="opt.text" inline />
             </div>
           </div>
           <el-collapse style="margin-top:8px;border:none;">
             <el-collapse-item title="查看答案与解析">
-              <div style="font-size:13.5px;"><b style="color:var(--success-color,#10B981);">答案：</b>{{ v.answer || '（AI未给出）' }}</div>
-              <div v-if="v.analysis" style="font-size:13.5px;margin-top:6px;"><b>解析：</b>{{ v.analysis }}</div>
+              <div style="font-size:13.5px;"><b style="color:var(--success-color,#10B981);">答案：</b><MathText :text="v.answer || '（AI未给出）'" inline /></div>
+              <div v-if="v.analysis" style="font-size:13.5px;margin-top:6px;"><b>解析：</b><MathText :text="v.analysis" /></div>
             </el-collapse-item>
           </el-collapse>
         </div>
@@ -123,6 +123,7 @@
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/api'
+import MathText from '@/components/MathText.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, ChatDotRound, Loading, Printer, VideoPlay, MagicStick } from '@element-plus/icons-vue'
 import { renderMarkdown } from '@/utils/markdown'

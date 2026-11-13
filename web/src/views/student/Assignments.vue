@@ -37,11 +37,11 @@
           <el-button @click="showScratch = !showScratch" circle title="草纸" size="small">📝</el-button>
         </div>
         <div class="assignment-desc" v-if="currentAssignment.description">
-          {{ currentAssignment.description }}
+          <MathText :text="currentAssignment.description" />
         </div>
         <div v-for="(q, idx) in currentAssignment.questions" :key="q.id" class="question-item">
-          <div class="question-title">{{ idx + 1 }}. {{ q.title }}</div>
-          <div class="question-content" v-if="q.content">{{ q.content }}</div>
+          <div class="question-title">{{ idx + 1 }}. <MathText :text="q.title" inline /></div>
+          <div class="question-content" v-if="q.content"><MathText :text="q.content" /></div>
           <div v-if="parseImages(q.images).length" class="question-images">
             <el-image
               v-for="(img, i) in parseImages(q.images)"
@@ -57,7 +57,7 @@
           <div v-if="q.options" class="options">
             <el-radio-group v-model="answers[q.id]">
               <el-radio v-for="opt in parsedOptions(q.options)" :key="opt.key" :label="opt.key">
-                {{ opt.key }}. {{ opt.text }}
+                {{ opt.key }}. <MathText :text="opt.text" inline />
               </el-radio>
             </el-radio-group>
           </div>
@@ -138,11 +138,11 @@
           </el-tag>
           <el-tag v-if="q.grading?.needs_review" size="small" type="warning" style="margin-left:6px;">待老师复核</el-tag>
         </div>
-        <div style="font-size:14px;margin:6px 0;color:var(--text-primary);">{{ q.title }}</div>
+        <div style="font-size:14px;margin:6px 0;color:var(--text-primary);"><MathText :text="q.title" inline /></div>
         <el-descriptions :column="1" size="small" border style="margin:8px 0;">
-          <el-descriptions-item label="你的答案">{{ q.user_answer || '未作答' }}</el-descriptions-item>
-          <el-descriptions-item label="正确答案">{{ q.correct_answer }}</el-descriptions-item>
-          <el-descriptions-item v-if="q.analysis" label="解析">{{ q.analysis }}</el-descriptions-item>
+          <el-descriptions-item label="你的答案"><MathText :text="q.user_answer || '未作答'" inline /></el-descriptions-item>
+          <el-descriptions-item label="正确答案"><MathText :text="q.correct_answer" inline /></el-descriptions-item>
+          <el-descriptions-item v-if="q.analysis" label="解析"><MathText :text="q.analysis" /></el-descriptions-item>
         </el-descriptions>
         <!-- AI批改详情（主观题） -->
         <div v-if="q.grading && q.grading.sub_questions" class="ai-grading">
@@ -171,6 +171,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/api'
+import MathText from '@/components/MathText.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const assignments = ref([])

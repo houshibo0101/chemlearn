@@ -43,9 +43,9 @@
 
         <div class="question-title">
           <el-tag size="small" type="info" style="margin-right:8px;">{{ currentQuestion.question_code || 'Q' + String(currentQuestion.id).padStart(4, '0') }}</el-tag>
-          {{ currentQuestion.title }}
+          <MathText :text="currentQuestion.title" inline />
         </div>
-        <div v-if="currentQuestion.content" class="question-content">{{ currentQuestion.content }}</div>
+        <div v-if="currentQuestion.content" class="question-content"><MathText :text="currentQuestion.content" /></div>
         <div v-if="parseImages(currentQuestion.images).length" class="question-images">
           <img v-for="(img, i) in parseImages(currentQuestion.images)" :key="i" :src="img" class="question-image" @click="previewImage(img)" />
         </div>
@@ -57,7 +57,7 @@
               <el-radio :label="opt.key" border :class="{
                 'option-correct': examSubmitted && isCorrectOption(currentQuestion, opt.key),
                 'option-wrong': examSubmitted && isWrongOption(currentQuestion, opt.key),
-              }">{{ opt.key }}. {{ opt.text }}</el-radio>
+              }">{{ opt.key }}. <MathText :text="opt.text" inline /></el-radio>
             </div>
           </el-radio-group>
           <el-checkbox-group v-else-if="currentQuestion.question_type==='multiple'" v-model="multiAnswers[currentQuestion.id]" :disabled="examSubmitted">
@@ -65,7 +65,7 @@
               <el-checkbox :label="opt.key" border :class="{
                 'option-correct': examSubmitted && isCorrectOption(currentQuestion, opt.key),
                 'option-wrong': examSubmitted && isWrongOption(currentQuestion, opt.key),
-              }">{{ opt.key }}. {{ opt.text }}</el-checkbox>
+              }">{{ opt.key }}. <MathText :text="opt.text" inline /></el-checkbox>
             </div>
           </el-checkbox-group>
         </div>
@@ -73,7 +73,7 @@
         <!-- 分小问答题（简答题/大题） -->
         <div v-else-if="parseSubQuestions(currentQuestion.sub_questions).length" class="sub-questions-area">
           <div v-for="sq in parseSubQuestions(currentQuestion.sub_questions)" :key="sq.id" class="sub-question-item">
-            <div class="sub-question-content">{{ sq.content }}</div>
+            <div class="sub-question-content"><MathText :text="sq.content" /></div>
             <el-input
               :value="subAnswers[currentQuestion.id]?.[sq.id]"
               @input="(val) => setSubAnswer(currentQuestion.id, sq.id, val)"
@@ -88,8 +88,8 @@
               <span :class="getSubResult(sq.id)?.is_correct ? 'sub-correct' : 'sub-wrong'">
                 {{ getSubResult(sq.id)?.is_correct ? '✓' : '✗' }} 得分：{{ getSubResult(sq.id)?.score || 0 }}/{{ sq.score }}
               </span>
-              <span v-if="getSubResult(sq.id)?.user_answer" class="sub-user-answer">你的答案：{{ getSubResult(sq.id).user_answer }}</span>
-              <span class="sub-correct-answer">正确答案：{{ getSubResult(sq.id)?.correct_answer }}</span>
+              <span v-if="getSubResult(sq.id)?.user_answer" class="sub-user-answer">你的答案：<MathText :text="getSubResult(sq.id).user_answer" inline /></span>
+              <span class="sub-correct-answer">正确答案：<MathText :text="getSubResult(sq.id)?.correct_answer" inline /></span>
             </div>
           </div>
         </div>
@@ -103,10 +103,10 @@
             <template #default>
               <div style="font-size:14px;line-height:1.8;">
                 <template v-if="!results[currentQuestion.id].sub_results">
-                  <p><strong>你的答案：</strong>{{ results[currentQuestion.id].user_answer || '未作答' }}</p>
-                  <p><strong>正确答案：</strong>{{ results[currentQuestion.id].correct_answer }}</p>
+                  <p><strong>你的答案：</strong><MathText :text="results[currentQuestion.id].user_answer || '未作答'" inline /></p>
+                  <p><strong>正确答案：</strong><MathText :text="results[currentQuestion.id].correct_answer" inline /></p>
                 </template>
-                <p v-if="results[currentQuestion.id].analysis"><strong>解析：</strong>{{ results[currentQuestion.id].analysis }}</p>
+                <p v-if="results[currentQuestion.id].analysis"><strong>解析：</strong><MathText :text="results[currentQuestion.id].analysis" /></p>
                 <p v-if="results[currentQuestion.id].recorded_as_wrong" style="color:var(--warning-color);">📌 已记录到错题本</p>
               </div>
             </template>
@@ -242,6 +242,7 @@
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/api'
+import MathText from '@/components/MathText.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Back, Close, ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 

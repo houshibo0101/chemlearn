@@ -111,6 +111,10 @@
         <el-form-item label="解析">
           <el-input v-model="form.analysis" type="textarea" :rows="3" placeholder="解题思路和解析" />
         </el-form-item>
+        <div class="latex-tip">
+          题干 / 选项 / 解析支持 LaTeX：行内 <code>$H_2SO_4$</code>，块级 <code>$$\Delta H < 0$$</code>，
+          化学式可直接写 <code>\ce{2Na + 2H2O -> 2NaOH + H2 ^}</code>
+        </div>
         <el-form-item label="题目图片">
           <div style="width:100%;">
             <div v-if="imageList.length > 0" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
@@ -353,3 +357,21 @@ const handleImport = async (e) => {
 
 onMounted(loadList)
 </script>
+
+<style scoped>
+.latex-tip {
+  margin: -6px 0 14px 76px;
+  font-size: 12px;
+  color: var(--text-placeholder);
+  line-height: 1.7;
+}
+.latex-tip code {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: Consolas, monospace;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+</style>

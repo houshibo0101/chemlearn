@@ -1,4 +1,4 @@
-﻿# 化学学习系统 · ChemLearn
+# 化学学习系统 · ChemLearn
 
 [![CI](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml/badge.svg)](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml)
 
@@ -77,6 +77,16 @@
   <img src="docs/matching-editor.png" width="49%" alt="老师新建关卡" />
   <img src="docs/matching-manage.png" width="49%" alt="关卡管理与成绩" />
 </p>
+
+### 公式与化学式（LaTeX）
+
+题干、选项、解析、错题解析、AI 回答、连连看卡片都支持 KaTeX 渲染：
+
+- 行内公式：`$H_2SO_4$`
+- 块级公式：`$$\Delta H < 0$$`
+- 化学式/方程式：直接写 `\ce{2Na + 2H2O -> 2NaOH + H2 ^}`（mhchem 扩展，不必再套 `$`）
+
+管理端录入题目或连连看关卡时，直接粘贴上面的写法即可。
 
 ## 技术栈
 

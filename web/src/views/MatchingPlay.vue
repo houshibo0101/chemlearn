@@ -63,7 +63,7 @@
           }"
           @click="selectCard(card)"
         >
-          <span class="p-card__text">{{ card.text }}</span>
+          <span class="p-card__text"><MathText :text="card.text" inline /></span>
         </button>
       </div>
 
@@ -81,11 +81,11 @@
         </div>
         <template v-if="lastMatch">
           <div class="p-knowledge__pair">
-            <span>{{ lastMatch.left_text }}</span>
+            <span><MathText :text="lastMatch.left_text" inline /></span>
             <el-icon><Right /></el-icon>
-            <span>{{ lastMatch.right_text }}</span>
+            <span><MathText :text="lastMatch.right_text" inline /></span>
           </div>
-          <div v-if="lastMatch.hint" class="p-knowledge__hint">{{ lastMatch.hint }}</div>
+          <div v-if="lastMatch.hint" class="p-knowledge__hint"><MathText :text="lastMatch.hint" /></div>
         </template>
         <div v-else class="p-knowledge__hint">
           化学连一连：物质与俗名、官能团与性质、方程式与现象、名称与化学式。
@@ -139,6 +139,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import api from '@/api'
+import MathText from '@/components/MathText.vue'
 
 const route = useRoute()
 const router = useRouter()

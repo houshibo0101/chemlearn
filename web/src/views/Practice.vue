@@ -70,7 +70,7 @@
         <div style="display:flex;gap:12px;">
           <!-- 复选框 -->
           <div style="flex-shrink:0;padding-top:2px;">
-            <el-checkbox :model-value="selectedIds.includes(q.id)" @change="toggleSelect(q.id)" />
+            <el-checkbox :model-value="selectedIds.includes(q.id)" @click.stop @change="toggleSelect(q.id)" />
           </div>
           <!-- 题目内容 -->
           <div style="flex:1;min-width:0;">
@@ -85,7 +85,7 @@
             </div>
             <div style="font-size:14px;line-height:1.6;">
               <el-tag size="small" type="info" style="margin-right:6px;">{{ q.question_code || 'Q' + String(q.id).padStart(4, '0') }}</el-tag>
-              {{ q.title }}
+              <MathText :text="q.title" inline />
             </div>
           </div>
         </div>
@@ -124,6 +124,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import api from '@/api'
+import MathText from '@/components/MathText.vue'
 import { ElMessage } from 'element-plus'
 import { VideoPlay, Search } from '@element-plus/icons-vue'
 

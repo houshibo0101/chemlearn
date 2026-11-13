@@ -42,10 +42,10 @@
         </div>
         <div v-for="(q, idx) in currentExam.questions" :key="q.id" class="question-item">
           <div class="question-title">
-            {{ idx + 1 }}. {{ q.title }}
+            {{ idx + 1 }}. <MathText :text="q.title" inline />
             <el-tag size="small" type="info" style="margin-left:8px">{{ q.score }}分</el-tag>
           </div>
-          <div class="question-content" v-if="q.content">{{ q.content }}</div>
+          <div class="question-content" v-if="q.content"><MathText :text="q.content" /></div>
           <div v-if="parseImages(q.images).length" class="question-images">
             <el-image
               v-for="(img, i) in parseImages(q.images)"
@@ -61,7 +61,7 @@
           <div v-if="q.options" class="options">
             <el-radio-group v-model="answers[q.id]">
               <el-radio v-for="opt in parsedOptions(q.options)" :key="opt.key" :label="opt.key">
-                {{ opt.key }}. {{ opt.text }}
+                {{ opt.key }}. <MathText :text="opt.text" inline />
               </el-radio>
             </el-radio-group>
           </div>
@@ -177,6 +177,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import api from '@/api'
+import MathText from '@/components/MathText.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const exams = ref([])
