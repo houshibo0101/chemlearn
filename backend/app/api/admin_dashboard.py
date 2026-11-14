@@ -1,14 +1,117 @@
 """
 管理员数据看板 - 详细统计接口
 """
-from fastapi import APIRouter, Depends, Query
+import os
+import tempfile
+from pathlib import Path
+from urllib.parse import urlparse
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy import select, func, case, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import get_current_admin
+from app.core.config import settings
 from app.models import User, UserRole, Question, WrongQuestion, APIKey, APICallLog
 
 router = APIRouter(prefix="/admin/dashboard", tags=["管理员-数据看板"])
+_ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
+
+
+def _mask_key(key: str) -> str:
+    if not key:
+        return ""
+    if len(key) <= 8:
+        return "*" * len(key)
+    return key[:4] + "*" * (len(key) - 8) + key[-4:]
+
+
+def _write_env(updates: dict):
+    """只更新指定键，保留 .env 里的其它配置与注释。"""
+    lines = []
+    if _ENV_PATH.exists():
+        lines = _ENV_PATH.read_text(encoding="utf-8").splitlines()
+    keys = set(updates)
+    out, seen = [], set()
+    for line in lines:
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#") and "=" in stripped:
+            key = stripped.split("=", 1)[0].strip()
+            if key in keys:
+                value = str(updates.get(key, "") or "")
+                if value:
+                    out.append("%s=%s" % (key, value))
+                    seen.add(key)
+                continue
+        out.append(line)
+    for key in keys:
+        value = str(updates.get(key, "") or "")
+        if value and key not in seen:
+            out.append("%s=%s" % (key, value))
+
+    _ENV_PATH.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_path = tempfile.mkstemp(dir=str(_ENV_PATH.parent), prefix=".env.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as f:
+            f.write("\n".join(out).rstrip("\n") + "\n")
+        if _ENV_PATH.exists():
+            try:
+                os.chmod(tmp_path, _ENV_PATH.stat().st_mode & 0o777)
+            except OSError:
+                pass
+        os.replace(tmp_path, _ENV_PATH)
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
+
+class AIConfigUpdate(BaseModel):
+    api_base: str
+    api_key: str = ""
+    model: str = ""
+    clear_key: bool = False
+
+
+@router.get("/ai-config", summary="读取 AI 接口配置（Key 脱敏）")
+async def get_ai_config(admin: User = Depends(get_current_admin)):
+    return {
+        "api_base": settings.AI_API_BASE,
+        "model": settings.AI_MODEL,
+        "key_configured": bool(settings.AI_API_KEY),
+        "key_hint": _mask_key(settings.AI_API_KEY),
+    }
+
+
+@router.put("/ai-config", summary="修改 AI 接口与 Key（立即生效）")
+async def update_ai_config(
+    data: AIConfigUpdate,
+    admin: User = Depends(get_current_admin),
+):
+    api_base = (data.api_base or "").strip().rstrip("/")
+    parsed = urlparse(api_base)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise HTTPException(status_code=400, detail="API 地址必须是 http:// 或 https:// 开头的完整地址")
+
+    model = (data.model or "").strip() or settings.AI_MODEL
+    new_key = "" if data.clear_key else (data.api_key or "").strip() or settings.AI_API_KEY
+
+    settings.AI_API_BASE = api_base
+    settings.AI_MODEL = model
+    settings.AI_API_KEY = new_key
+    _write_env({
+        "AI_API_BASE": api_base,
+        "AI_MODEL": model,
+        "AI_API_KEY": new_key,
+    })
+
+    return {
+        "message": "AI 配置已保存并立即生效",
+        "api_base": api_base,
+        "model": model,
+        "key_configured": bool(new_key),
+        "key_hint": _mask_key(new_key),
+    }
 
 
 @router.get("/summary", summary="数据看板总览")

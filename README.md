@@ -1,4 +1,4 @@
-﻿# 化学学习系统 · ChemLearn
+# 化学学习系统 · ChemLearn
 
 [![CI](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml/badge.svg)](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml)
 
@@ -34,7 +34,7 @@
 | 文件 | 平台 | 说明 |
 |---|---|---|
 | [ChemLearn-Deployer-v1.3.0.exe](https://github.com/houshibo0101/chemlearn/releases/tag/v1.3.0) | Linux 服务器 | 填 IP、SSH 密码和 AI Key，自动装好 nginx / Python / systemd，3–6 分钟完成 |
-| [ChemLearnWindows-v2.1.14.exe](https://github.com/houshibo0101/chemlearn/releases/tag/windows-v2.1.14) | Windows 本机 | 双击部署到本机，界面里看地址 / 开系统 / 重置，局域网可访问 |
+| [ChemLearnWindows-v2.1.15.exe](https://github.com/houshibo0101/chemlearn/releases/tag/windows-v2.1.15) | Windows 本机 | 双击部署到本机，界面里看地址 / 开系统 / 重置，局域网可访问 |
 | [题库数据包 453 题](https://github.com/houshibo0101/chemlearn/releases/tag/question-bank-v1) | 通用 | 解压到 `backend/import_data/` 后跑导入脚本 |
 
 > Linux 部署器内置完整部署包（源码 + 前端 + 依赖清单），目标机只需能联网的 Ubuntu / Debian。
@@ -56,7 +56,7 @@
 | 刷题 | 按章节 / 题型 / 难度筛选，支持顺序练习与随机组卷，答题即时判分；草纸支持手写（笔 / 橡皮 / 三色 / 撤销 / 清空），平板可用 |
 | 化学连连看 | 物质 / 官能团 / 方程式 / 俗称配对闯关，计时计分、连击、排行榜，老师可上传关卡 |
 | 错题本 | 自动收录错题，支持重做、导出 Excel |
-| AI 问答 | 接入大模型 API，针对题目做讲解（Key 可在管理端配置） |
+| AI 问答 | 接入大模型 API，针对题目做讲解；账号管理页点「AI Token 消耗」卡片可改接口 / Key / 模型，保存立即生效 |
 | 班级管理 | 建班、邀请学生、查看班级练习情况 |
 | 作业 / 考试 | 布置作业与考试，自动统计得分与正确率 |
 | 题库管理 | 后台增删改查题目，支持 Excel / PDF 批量导入 |

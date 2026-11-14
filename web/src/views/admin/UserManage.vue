@@ -23,7 +23,7 @@
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover">
+        <el-card shadow="hover" class="ai-config-card" @click="openAiConfig" title="点击配置 AI 接口和 API Key">
           <div style="text-align:center;">
             <div style="font-size:12px;color:var(--text-placeholder);margin-bottom:4px;">🔑 AI Token消耗</div>
             <div style="font-size:24px;font-weight:bold;color:var(--success-color);">{{ (stats.token_usage?.total_tokens || 0).toLocaleString() }}</div>
@@ -31,6 +31,7 @@
             <div style="font-size:11px;color:var(--text-disabled);margin-top:6px;">
               输入 {{ (stats.token_usage?.prompt_tokens || 0).toLocaleString() }} · 输出 {{ (stats.token_usage?.completion_tokens || 0).toLocaleString() }}
             </div>
+            <div style="font-size:11px;color:var(--brand-600);margin-top:6px;">点击配置接口 / Key</div>
           </div>
         </el-card>
       </el-col>
@@ -267,11 +268,47 @@
         <el-button type="primary" @click="statsDialog = false">关闭</el-button>
       </template>
     </el-dialog>
+
+    <!-- AI 接口配置 -->
+    <el-dialog v-model="aiConfigVisible" title="AI 接口配置" width="560px" :close-on-click-modal="false">
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+        title="保存后立即生效，并写入 backend/.env"
+        description="API Key 只保存在服务器本地，不会回显；留空表示不修改。"
+        style="margin-bottom:16px;"
+      />
+      <el-form label-width="90px" v-loading="aiConfigLoading">
+        <el-form-item label="API 地址" required>
+          <el-input v-model="aiForm.api_base" placeholder="https://api.openai.com/v1" />
+        </el-form-item>
+        <el-form-item label="API Key">
+          <el-input
+            v-model="aiForm.api_key"
+            type="password"
+            show-password
+            :disabled="aiForm.clear_key"
+            :placeholder="keyPlaceholder"
+          />
+        </el-form-item>
+        <el-form-item label="模型">
+          <el-input v-model="aiForm.model" placeholder="如 gpt-4o-mini、doubao-1-5-pro-32k" />
+        </el-form-item>
+        <el-form-item v-if="aiForm.key_configured" label=" ">
+          <el-checkbox v-model="aiForm.clear_key">清除已保存的 Key</el-checkbox>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="aiConfigVisible = false">取消</el-button>
+        <el-button type="primary" :loading="aiConfigSaving" @click="saveAiConfig">保存并生效</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import api from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Upload, Download, UploadFilled } from '@element-plus/icons-vue'
@@ -394,6 +431,65 @@ const banOrUnban = async (row) => {
   }
 }
 
+const aiConfigVisible = ref(false)
+const aiConfigLoading = ref(false)
+const aiConfigSaving = ref(false)
+const aiForm = reactive({
+  api_base: '',
+  api_key: '',
+  model: '',
+  key_configured: false,
+  key_hint: '',
+  clear_key: false,
+})
+const keyPlaceholder = computed(() => (
+  aiForm.key_configured
+    ? `已配置 ${aiForm.key_hint}，留空不修改`
+    : '请输入 API Key'
+))
+
+const openAiConfig = async () => {
+  aiConfigVisible.value = true
+  aiConfigLoading.value = true
+  try {
+    const r = await api.get('/admin/dashboard/ai-config')
+    Object.assign(aiForm, {
+      api_base: r.api_base || '',
+      api_key: '',
+      model: r.model || '',
+      key_configured: !!r.key_configured,
+      key_hint: r.key_hint || '',
+      clear_key: false,
+    })
+  } catch {
+    ElMessage.error('读取 AI 配置失败')
+  } finally {
+    aiConfigLoading.value = false
+  }
+}
+
+const saveAiConfig = async () => {
+  if (!aiForm.api_base.trim()) {
+    ElMessage.warning('请填写 API 地址')
+    return
+  }
+  aiConfigSaving.value = true
+  try {
+    const r = await api.put('/admin/dashboard/ai-config', {
+      api_base: aiForm.api_base.trim(),
+      api_key: aiForm.api_key.trim(),
+      model: aiForm.model.trim(),
+      clear_key: aiForm.clear_key,
+    })
+    ElMessage.success(r.message || 'AI 配置已保存')
+    aiConfigVisible.value = false
+  } catch {
+    // 错误由 api 拦截器提示
+  } finally {
+    aiConfigSaving.value = false
+  }
+}
+
 const statsDialog = ref(false)
 const userStats = ref(null)
 const viewStats = async (row) => {
@@ -506,3 +602,14 @@ const formatTime = (t) => {
 
 onMounted(() => { loadUsers(); loadStats(); loadClasses() })
 </script>
+
+<style scoped>
+.ai-config-card {
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.ai-config-card:hover {
+  border-color: var(--brand-500);
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.16);
+}
+</style>
