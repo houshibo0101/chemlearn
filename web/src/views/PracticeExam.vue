@@ -193,19 +193,12 @@
     <!-- 草纸 -->
     <div v-if="showScratch" class="scratch-panel">
       <div class="scratch-header">
-        <span>📝 草纸</span>
+        <span>📝 草纸（手写）</span>
         <div>
-          <el-button text size="small" @click="clearScratch">清空</el-button>
           <el-button text @click="showScratch = false"><el-icon><Close /></el-icon></el-button>
         </div>
       </div>
-      <textarea
-        v-model="scratchPad"
-        class="scratch-textarea"
-        placeholder="在这里打草稿..."
-        @input="saveScratch"
-        :disabled="examSubmitted"
-      ></textarea>
+      <ScratchPad :disabled="examSubmitted" />
     </div>
 
     <!-- 交卷确认弹窗 -->
@@ -252,6 +245,7 @@ import { useRouter } from 'vue-router'
 import api from '@/api'
 import MathText from '@/components/MathText.vue'
 import ChemSymbolBar from '@/components/ChemSymbolBar.vue'
+import ScratchPad from '@/components/ScratchPad.vue'
 import { insertAtActiveInput } from '@/utils/input'
 import { mediaUrl } from '@/utils/media'
 import { ElMessage, ElMessageBox } from 'element-plus'

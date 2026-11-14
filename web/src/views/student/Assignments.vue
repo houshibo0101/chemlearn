@@ -117,13 +117,10 @@
       <!-- 草纸 -->
       <div v-if="showScratch" class="scratch-panel">
         <div class="scratch-header">
-          <span>📝 草纸</span>
-          <div>
-            <el-button text size="small" @click="clearScratch">清空</el-button>
-            <el-button text @click="showScratch = false">✕</el-button>
-          </div>
+          <span>📝 草纸（手写）</span>
+          <el-button text @click="showScratch = false">✕</el-button>
         </div>
-        <textarea v-model="scratchPad" class="scratch-textarea" placeholder="在这里打草稿..."></textarea>
+        <ScratchPad />
       </div>
 
       <template #footer>
@@ -181,6 +178,7 @@ import { ref, onMounted } from 'vue'
 import api from '@/api'
 import MathText from '@/components/MathText.vue'
 import ChemSymbolBar from '@/components/ChemSymbolBar.vue'
+import ScratchPad from '@/components/ScratchPad.vue'
 import { insertAtActiveInput } from '@/utils/input'
 import { mediaUrl } from '@/utils/media'
 import { ElMessage, ElMessageBox } from 'element-plus'

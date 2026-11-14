@@ -1,4 +1,4 @@
-﻿# 化学学习系统 · ChemLearn
+# 化学学习系统 · ChemLearn
 
 [![CI](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml/badge.svg)](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml)
 
@@ -47,7 +47,7 @@
 
 | 模块 | 说明 |
 |---|---|
-| 刷题 | 按章节 / 题型 / 难度筛选，支持顺序练习与随机组卷，答题即时判分 |
+| 刷题 | 按章节 / 题型 / 难度筛选，支持顺序练习与随机组卷，答题即时判分；草纸支持手写（笔 / 橡皮 / 三色 / 撤销 / 清空），平板可用 |
 | 化学连连看 | 物质 / 官能团 / 方程式 / 俗称配对闯关，计时计分、连击、排行榜，老师可上传关卡 |
 | 错题本 | 自动收录错题，支持重做、导出 Excel |
 | AI 问答 | 接入大模型 API，针对题目做讲解（Key 可在管理端配置） |
