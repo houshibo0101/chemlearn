@@ -156,6 +156,25 @@ uvicorn app.main:app --reload --port 8000
 - 健康检查 <http://127.0.0.1:8000/api/health>
 - 首次启动会自动建表并创建管理员 **admin / admin123**
 
+### 邮箱验证码（注册）
+
+注册默认要求邮箱验证码，需先在 `backend/.env` 配置 SMTP：
+
+```ini
+SMTP_HOST=smtp.qq.com
+SMTP_PORT=465
+SMTP_USER=你的邮箱@qq.com
+SMTP_PASSWORD=邮箱授权码
+SMTP_FROM=你的邮箱@qq.com
+SMTP_USE_TLS=false
+SMTP_USE_SSL=true
+REQUIRE_EMAIL_VERIFICATION=true
+```
+
+QQ 邮箱用 465 端口 + SSL，密码填邮箱设置里的「授权码」而不是登录密码。
+SMTP 未配置时，注册页点发送验证码会提示「邮件服务未配置」。
+本地调试可设 `SMTP_DEBUG=true` 直接返回验证码；生产必须保持 `false`。
+
 ### 2. 导入题库（可选）
 
 题库不随源码分发，单独打包放在 Releases：

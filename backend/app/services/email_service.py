@@ -2,6 +2,7 @@
 邮件发送服务
 """
 import smtplib
+import ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from app.core.config import settings
@@ -21,11 +22,17 @@ def send_email(to_email: str, subject: str, html_content: str) -> bool:
 
         msg.attach(MIMEText(html_content, 'html', 'utf-8'))
 
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-            if settings.SMTP_USE_TLS:
-                server.starttls()
-            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-            server.send_message(msg)
+        if settings.SMTP_USE_SSL:
+            context = ssl.create_default_context()
+            with smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT, timeout=20, context=context) as server:
+                server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+                server.send_message(msg)
+        else:
+            with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=20) as server:
+                if settings.SMTP_USE_TLS:
+                    server.starttls()
+                server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+                server.send_message(msg)
 
         print(f"[邮件] 发送成功: {to_email}")
         return True

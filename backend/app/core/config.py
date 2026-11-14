@@ -58,6 +58,7 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM: str = "ChemLearn <noreply@chemlearn.com>"
     SMTP_USE_TLS: bool = True
+    SMTP_USE_SSL: bool = False
     # 注册是否强制邮箱验证码（生产默认开启；本地测试可设 false）
     REQUIRE_EMAIL_VERIFICATION: bool = True
     # 仅本地调试用：SMTP 未配置时把验证码返回给前端
