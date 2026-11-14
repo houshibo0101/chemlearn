@@ -2,14 +2,16 @@
 题目图片上传 + 简答题批改
 """
 import os
+import io
 import json
 import logging
 import uuid
+import zipfile
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, get_current_teacher_or_admin
 from app.models.user import User
 from app.models.question import Question
 from app.core.config import settings
@@ -44,6 +46,129 @@ async def upload_question_image(
     with open(filepath, "wb") as f:
         f.write(content)
     return {"url": f"/uploads/questions/{filename}", "filename": filename}
+
+
+# --- KingDraw .kdx 导入 -----------------------------------------------------
+# .kdx 本质是 zip：protocol 里是 JSON（原子/键 + 坐标），media 里是预览图。
+# 优先把 protocol 转成 MOL 交给 Ketcher 高清重绘；解析不了再退回内嵌 PNG。
+KDX_ELEMENTS = {
+    "H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", "Na", "Mg", "Al",
+    "Si", "P", "S", "Cl", "Ar", "K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe",
+    "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As", "Se", "Br", "Kr", "Rb", "Sr",
+    "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn",
+    "Sb", "Te", "I", "Xe", "Cs", "Ba", "La", "Ce", "Pr", "Nd", "Pm", "Sm",
+    "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu", "Hf", "Ta", "W",
+    "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "At", "Rn",
+    "Fr", "Ra", "Ac", "Th", "Pa", "U",
+}
+
+
+def _kdx_doc_to_mol(doc):
+    """把 KingDraw protocol 文档转成 MOL V2000；复杂基团/不支持时返回 None。"""
+    elements = doc.get("elements") or []
+    if not isinstance(elements, list):
+        return None
+
+    atoms = []
+    bonds = []
+    seen = set()
+    for group in elements:
+        for sub in group.get("subs") or []:
+            kind = sub.get("id")
+            prop = sub.get("prop") or {}
+            kid = sub.get("kid") or sub.get("id")
+            if kind == "node":
+                if kid in seen:
+                    continue
+                symbol = (prop.get("type") or "").strip()
+                # 带 label/html 的缩写基团（如 COOH、Ph）不硬转，交给 PNG 兜底
+                if prop.get("label") or prop.get("html"):
+                    return None
+                if symbol not in KDX_ELEMENTS:
+                    return None
+                point = prop.get("point") or {}
+                try:
+                    x = float(point.get("x", 0)) * 12.0
+                    y = -float(point.get("y", 0)) * 12.0
+                except (TypeError, ValueError):
+                    return None
+                try:
+                    charge = int(prop.get("charge") or 0)
+                except (TypeError, ValueError):
+                    charge = 0
+                charge_code = {0: 0, 1: 3, 2: 2, 3: 1, -1: 5, -2: 6, -3: 7}.get(charge, 0)
+                seen.add(kid)
+                atoms.append({"kid": kid, "symbol": symbol, "x": x, "y": y, "charge": charge_code})
+            elif kind == "bond":
+                rels = sub.get("rels") or []
+                if len(rels) != 2:
+                    return None
+                bond_type = int(prop.get("type") or 1)
+                if bond_type not in (1, 2, 3, 4):
+                    return None
+                bonds.append({"rels": (rels[0], rels[1]), "type": bond_type})
+
+    if not atoms or not bonds:
+        return None
+    index = {atom["kid"]: i + 1 for i, atom in enumerate(atoms)}
+    lines = ["KingDraw import", "  ChemLearn", "",
+             f"{len(atoms):3d}{len(bonds):3d}  0  0  0  0            999 V2000"]
+    for atom in atoms:
+        lines.append(
+            f"{atom['x']:10.4f}{atom['y']:10.4f}{0.0:10.4f} {atom['symbol']:<3s}"
+            f" 0{atom['charge']:3d}  0  0  0  0  0  0  0  0  0"
+        )
+    for bond in bonds:
+        a = index.get(bond["rels"][0])
+        b = index.get(bond["rels"][1])
+        if not a or not b:
+            return None
+        lines.append(f"{a:3d}{b:3d}{bond['type']:3d}  0  0  0  0")
+    return "\n".join(lines) + "\n"
+
+
+@router.post("/import-kingdraw", summary="导入 KingDraw .kdx 文件")
+async def import_kingdraw(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_teacher_or_admin),
+):
+    """解析 .kdx：返回 MOL（可编辑）或内嵌预览图 URL（兜底）。"""
+    if not (file.filename or "").lower().endswith(".kdx"):
+        raise HTTPException(status_code=400, detail="目前支持 KingDraw 的 .kdx 文件")
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="文件不能超过 10MB")
+    try:
+        archive = zipfile.ZipFile(io.BytesIO(content))
+    except zipfile.BadZipFile:
+        raise HTTPException(status_code=400, detail="不是有效的 .kdx 文件")
+
+    names = set(archive.namelist())
+    mol = None
+    if "protocol" in names:
+        try:
+            raw = json.loads(archive.read("protocol").decode("utf-8", "replace"))
+            doc = json.loads(raw["protocol"]) if isinstance(raw.get("protocol"), str) else raw
+            mol = _kdx_doc_to_mol(doc)
+        except Exception as exc:  # 解析失败就走 PNG 兜底
+            logger.info("KingDraw protocol 解析失败：%s", exc)
+
+    preview_url = None
+    # 只有 MOL 解析失败时才落盘内嵌小图，避免每次导入都产生无用文件
+    if not mol:
+        for member in ("media/p_png.png", "media/p_jpg.jpg", "media/p_thumbnail.png"):
+            if member in names:
+                data = archive.read(member)
+                ext = os.path.splitext(member)[1] or ".png"
+                filename = f"{uuid.uuid4().hex}{ext}"
+                with open(os.path.join(UPLOAD_DIR, filename), "wb") as f:
+                    f.write(data)
+                preview_url = f"/uploads/questions/{filename}"
+                break
+
+    if not mol and not preview_url:
+        raise HTTPException(status_code=400, detail="未找到可用的结构数据或预览图")
+    return {"mol": mol, "preview_url": preview_url, "source": "kingdraw"}
 
 
 @router.post("/{question_id}/grade-subjective", summary="批改简答题")

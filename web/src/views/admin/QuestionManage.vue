@@ -190,12 +190,12 @@
         <input
           ref="ketcherFileInput"
           type="file"
-          accept=".cdx,.mol,.sdf,.cdxml,.smi,.smiles"
+          accept=".kdx,.cdx,.mol,.sdf,.cdxml,.smi,.smiles"
           style="display:none"
           @change="handleKetcherImport"
         />
         <span class="ketcher-hint">
-          KingDraw 里「另存为」.cdx 或 .mol；原生 .king 请先导出。也可直接粘贴 SMILES。
+          KingDraw 的 .kdx 可直接导入；也支持 .cdx / .mol / SMILES。老式 .king 请先导出。
         </span>
         <div class="ketcher-bar__actions">
           <el-button @click="showKetcher = false">取消</el-button>
@@ -277,7 +277,7 @@ const handleKetcherImport = async (event) => {
   if (!file) return
   const name = file.name.toLowerCase()
   if (name.endsWith('.king')) {
-    ElMessage.warning('KingDraw 原生 .king 暂不支持，请在 KingDraw 中另存为 .cdx 或 .mol')
+    ElMessage.warning('老式 .king 暂不支持，请用 KingDraw 另存为 .kdx / .cdx / .mol')
     return
   }
   const ketcher = getKetcher()
@@ -286,13 +286,29 @@ const handleKetcherImport = async (event) => {
     return
   }
   try {
+    if (name.endsWith('.kdx')) {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await api.post('/questions/import-kingdraw', formData)
+      if (res?.mol) {
+        await ketcher.setMolecule(res.mol)
+        ElMessage.success('已导入 KingDraw 结构，可继续编辑后插入')
+      } else if (res?.preview_url) {
+        imageList.value.push(res.preview_url)
+        showKetcher.value = false
+        ElMessage.success('已导入 KingDraw 结构图')
+      } else {
+        ElMessage.error('没有解析出结构，请检查文件')
+      }
+      return
+    }
     const data = name.endsWith('.cdx')
       ? fileToBase64(await file.arrayBuffer())
       : await file.text()
     await ketcher.setMolecule(data)
     ElMessage.success('已导入：' + file.name)
   } catch (err) {
-    ElMessage.error('无法解析该文件，请在 KingDraw 中导出 .mol 或 .cdx 后重试')
+    ElMessage.error('无法解析该文件，请在 KingDraw 中导出 .kdx / .mol / .cdx 后重试')
   }
 }
 

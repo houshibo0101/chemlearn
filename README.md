@@ -1,4 +1,4 @@
-﻿# 化学学习系统 · ChemLearn
+# 化学学习系统 · ChemLearn
 
 [![CI](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml/badge.svg)](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml)
 
@@ -94,9 +94,10 @@
 题库管理 → 上传题目 → 题目图片 → 「画结构式 / 导入 KingDraw」，内置 [Ketcher](https://github.com/epam/ketcher)（Apache-2.0）：
 
 - 支持单/双/三键、芳香环、环模板、官能团、电荷、立体楔形键，平板可直接点按绘制
-- 可导入 KingDraw 导出的 `.cdx`、`.mol`、`.sdf`，以及 `.smi` / `.smiles` / `.cdxml`
-- KingDraw 操作：画好结构 → 右键「复制为」SMILES/MOL，或「另存为」`.cdx` / `.mol`
-- 原生 `.king` 是私有格式，暂不支持，请先在 KingDraw 中导出 `.cdx` 或 `.mol`
+- **KingDraw 新版 `.kdx` 可直接导入**：后端解析 zip 里的 `protocol` 原子/键坐标，转成可编辑结构
+- 也支持 KingDraw 导出的 `.cdx`、`.mol`、`.sdf`，以及 `.smi` / `.smiles` / `.cdxml`
+- KingDraw 操作：直接「另存为」`.kdx`；或「另存为」`.cdx` / `.mol`；或右键「复制为」SMILES/MOL
+- 老式 `.king` 是私有格式，暂不支持；`.kdx` 解析失败时会退回文件内嵌的预览图
 - 画完点「插入到题目」，会生成 PNG 图片存入题目图片，学生端、作业、考试直接显示
 
 结构式目前作为图片展示，不参与自动判分；学生若要画结构作答，需要人工批改，可后续再加。
