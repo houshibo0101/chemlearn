@@ -34,7 +34,7 @@
 | 文件 | 平台 | 说明 |
 |---|---|---|
 | [ChemLearn-Deployer-v1.3.0.exe](https://github.com/houshibo0101/chemlearn/releases/tag/v1.3.0) | Linux 服务器 | 填 IP、SSH 密码和 AI Key，自动装好 nginx / Python / systemd，3–6 分钟完成 |
-| [ChemLearnWindows-v2.1.18.exe](https://github.com/houshibo0101/chemlearn/releases/tag/windows-v2.1.18) | Windows 本机 | 双击部署到本机，界面里看地址 / 开系统 / 重置，局域网可访问 |
+| [ChemLearnWindows-v2.1.19.exe](https://github.com/houshibo0101/chemlearn/releases/tag/windows-v2.1.19) | Windows 本机 | 双击部署到本机，界面里看地址 / 开系统 / 重置，局域网可访问 |
 | [题库数据包 453 题](https://github.com/houshibo0101/chemlearn/releases/tag/question-bank-v1) | 通用 | 解压到 `backend/import_data/` 后跑导入脚本 |
 
 > Linux 部署器内置完整部署包（源码 + 前端 + 依赖清单），目标机只需能联网的 Ubuntu / Debian。
@@ -60,7 +60,7 @@
 | 班级管理 | 建班、邀请学生、查看班级练习情况 |
 | 作业 / 考试 | 布置作业与考试，自动统计得分与正确率 |
 | 题库管理 | 后台增删改查题目，支持 Excel / PDF 批量导入 |
-| 账号管理 | 学生/教师/管理员三种角色，支持批量导入与密码重置 |
+| 账号管理 | 学生/教师/管理员三种角色，支持四列 Excel 批量导入（姓名 / 学段 / 班级 / 身份）与密码重置 |
 | 学习报告 | 个人与班级维度的正确率、知识点掌握度统计 |
 | 消息通知 | 站内通知推送 |
 | API 开放平台 | 为第三方应用签发 API Key，按 scope 与日限额调用 |

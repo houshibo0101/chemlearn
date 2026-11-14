@@ -1,14 +1,17 @@
 """
-管理员用户管理：用户列表、Excel批量导入学生、删除用户、重置密码、禁用/启用
+管理员用户管理：用户列表、Excel批量导入学生/老师、删除用户、重置密码、禁用/启用
 """
 import io
+from urllib.parse import quote
+
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import hash_password
 from app.core.deps import get_current_admin
-from app.models import User, UserRole, OfflineBind
+from app.models import User, UserRole, OfflineBind, ClassRoom, TeacherClass
 from app.schemas import UserOut, ImportResult
 
 router = APIRouter(prefix="/admin/users", tags=["管理员-用户管理"])
@@ -69,9 +72,9 @@ async def list_users(
     }
 
 
-@router.post("/import", response_model=ImportResult, summary="Excel批量导入学生")
+@router.post("/import", response_model=ImportResult, summary="Excel批量导入学生/老师")
 async def import_students(
-    file: UploadFile = File(..., description="Excel文件，需含'姓名'列，可选'学段'列"),
+    file: UploadFile = File(..., description="Excel文件，四列：姓名、学段、班级、身份"),
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_admin),
 ):
@@ -142,10 +145,21 @@ async def import_students(
             class_col = headers[key]
             break
 
+    # 找身份列（学生/老师）
+    role_col = None
+    for key in ["身份", "角色", "身份类型", "role", "Role"]:
+        if key in headers:
+            role_col = headers[key]
+            break
+
     # 预加载所有班级，避免重复查询
-    from app.models import ClassRoom
     all_classes = (await db.execute(select(ClassRoom))).scalars().all()
     class_map = {c.name: c.id for c in all_classes}
+
+    role_map = {
+        "学生": UserRole.STUDENT, "student": UserRole.STUDENT,
+        "老师": UserRole.TEACHER, "教师": UserRole.TEACHER, "teacher": UserRole.TEACHER,
+    }
 
     details = []
     success = 0
@@ -166,6 +180,17 @@ async def import_students(
         grade = None
         if grade_col is not None and row[grade_col]:
             grade = str(row[grade_col]).strip()
+
+        # 身份：默认学生；只允许学生/老师，避免通过表格误建管理员
+        role_text = ""
+        if role_col is not None and row[role_col]:
+            role_text = str(row[role_col]).strip()
+        role_key = role_text.lower()
+        role = role_map.get(role_key, UserRole.STUDENT) if role_text else UserRole.STUDENT
+        if role_text and role_key not in role_map:
+            failed += 1
+            details.append(f"第{total + 1}行：{name} 的身份「{role_text}」无效，只能填学生或老师")
+            continue
 
         # 处理班级
         class_id = None
@@ -209,17 +234,21 @@ async def import_students(
                 username=username,
                 full_name=name,
                 grade=grade,
-                class_id=class_id,
+                class_id=class_id if role == UserRole.STUDENT else None,
                 hashed_password=hash_password(default_password),
-                role=UserRole.STUDENT,
+                role=role,
                 must_change_password=True,
             )
             db.add(user)
             await db.flush()
+            if role == UserRole.TEACHER and class_id:
+                db.add(TeacherClass(teacher_id=user.id, class_id=class_id))
+                await db.flush()
             success += 1
             note = f"（重名，用户名改为{username}）" if suffix > 1 else ""
+            role_note = "，身份：老师" if role == UserRole.TEACHER else "，身份：学生"
             class_note = f"，班级：{class_name}" if class_name else ""
-            details.append(f"✓ {name} → 账号：{username}，密码：{default_password}{class_note}{note}")
+            details.append(f"✓ {name} → 账号：{username}，密码：{default_password}{role_note}{class_note}{note}")
         except Exception as e:
             failed += 1
             details.append(f"✗ {name}：导入失败 - {str(e)}")
@@ -231,6 +260,40 @@ async def import_students(
         success=success,
         failed=failed,
         details=details,
+    )
+
+
+@router.get("/import/template", summary="下载学生/老师导入模板")
+async def download_import_template(admin: User = Depends(get_current_admin)):
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "导入名单"
+    headers = ["姓名", "学段", "班级", "身份"]
+    ws.append(headers)
+    ws.append(["张三", "高一", "高一1班", "学生"])
+    ws.append(["李老师", "高一", "高一1班", "老师"])
+    for cell in ws[1]:
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill("solid", fgColor="4F46E5")
+    widths = {"A": 16, "B": 12, "C": 20, "D": 12}
+    for col, width in widths.items():
+        ws.column_dimensions[col].width = width
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    filename = quote("学生导入模板.xlsx")
+    return StreamingResponse(
+        buf,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": (
+                "attachment; filename=student_import_template.xlsx; "
+                "filename*=UTF-8''" + filename
+            )
+        },
     )
 
 

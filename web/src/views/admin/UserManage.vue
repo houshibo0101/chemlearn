@@ -188,9 +188,12 @@
     </div>
 
     <!-- 导入弹窗 -->
-    <el-dialog v-model="showImport" title="批量导入学生" width="500px">
+    <el-dialog v-model="showImport" title="批量导入学生 / 老师" width="520px">
       <el-alert type="info" :closable="false" style="margin-bottom:12px;">
-        <p style="margin:0 0 4px;">Excel 需包含 <b>姓名</b> 列（必填），可选 <b>学段</b> 列（高一/高二/高三）和 <b>班级</b> 列（班级不存在会自动创建）。</p>
+        <p style="margin:0 0 4px;">Excel 四列表头依次为：<b>姓名、学段、班级、身份</b>。</p>
+        <p style="margin:0 0 4px;">身份填 <b>学生</b> 或 <b>老师</b>；班级不存在会自动创建，老师会加入该班级。
+          <el-button link type="primary" size="small" @click="downloadTemplate">下载模板</el-button>
+        </p>
         <p style="margin:0;">账号自动生成姓名全拼，初始密码 <b>111111</b>，首次登录需修改密码。重名自动加数字后缀。</p>
       </el-alert>
       <el-upload
@@ -564,9 +567,26 @@ const doImport = async () => {
   }
 }
 
-const downloadTemplate = () => {
-  // 生成简单的CSV模板提示
-  ElMessage.info('Excel模板：第一列表头"姓名"，第二列表头"学段"（可选）')
+const downloadTemplate = async () => {
+  try {
+    // 直接用 fetch 取二进制，避免 axios 对 blob 响应的转换
+    const token = localStorage.getItem('token')
+    const res = await fetch('/chem/api/v1/admin/users/import/template', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = '学生导入模板.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  } catch {
+    ElMessage.error('模板下载失败，请刷新后重试')
+  }
 }
 
 const resetPwd = async (row) => {
