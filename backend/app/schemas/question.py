@@ -16,6 +16,10 @@ class QuestionCreate(BaseModel):
     options: Optional[str] = Field(None, description="选项JSON字符串")
     answer: str
     analysis: Optional[str] = None
+    images: Optional[str] = None
+    keywords: Optional[str] = None
+    source: Optional[str] = None
+    sub_questions: Optional[str] = None
 
 
 class QuestionUpdate(BaseModel):
@@ -28,6 +32,10 @@ class QuestionUpdate(BaseModel):
     options: Optional[str] = None
     answer: Optional[str] = None
     analysis: Optional[str] = None
+    images: Optional[str] = None
+    keywords: Optional[str] = None
+    source: Optional[str] = None
+    sub_questions: Optional[str] = None
 
 
 class QuestionOut(BaseModel):

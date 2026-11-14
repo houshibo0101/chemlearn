@@ -52,6 +52,10 @@ async def create_question(
         options=options_str,
         answer=data.answer,
         analysis=data.analysis,
+        images=data.images,
+        keywords=data.keywords,
+        source=data.source,
+        sub_questions=data.sub_questions,
         creator_id=admin.id,
     )
     db.add(q)

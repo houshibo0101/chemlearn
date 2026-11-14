@@ -183,10 +183,27 @@
     <!-- 结构式编辑器（Ketcher，支持 KingDraw 导出的 cdx/mol） -->
     <el-dialog v-model="showKetcher" title="结构式编辑器" width="92%" top="3vh" :close-on-click-modal="false" @opened="waitKetcher">
       <div class="ketcher-box">
-        <iframe ref="ketcherFrame" :src="ketcherUrl" class="ketcher-frame" title="结构式编辑器" />
+        <div v-if="!ketcherReady" class="ketcher-loading">
+          <template v-if="!ketcherError">
+            <el-icon class="is-loading" :size="30"><Loading /></el-icon>
+            <div class="ketcher-loading__title">结构式编辑器加载中…</div>
+            <div class="ketcher-loading__hint">首次约 30MB，平板/WiFi 可能需要几十秒</div>
+          </template>
+          <template v-else>
+            <div class="ketcher-loading__title">编辑器加载失败</div>
+            <el-button type="primary" size="small" @click="waitKetcher">重试</el-button>
+          </template>
+        </div>
+        <iframe
+          ref="ketcherFrame"
+          :src="ketcherUrl"
+          class="ketcher-frame"
+          :class="{ 'ketcher-frame--hidden': !ketcherReady }"
+          title="结构式编辑器"
+        />
       </div>
       <div class="ketcher-bar">
-        <el-button @click="triggerKetcherImport">导入 KingDraw 文件</el-button>
+        <el-button :disabled="!ketcherReady" @click="triggerKetcherImport">导入 KingDraw 文件</el-button>
         <input
           ref="ketcherFileInput"
           type="file"
@@ -216,7 +233,7 @@ import ChemSymbolBar from '@/components/ChemSymbolBar.vue'
 import { insertAtActiveInput } from '@/utils/input'
 import { mediaUrl } from '@/utils/media'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Delete, Download, Upload, Document, EditPen } from '@element-plus/icons-vue'
+import { Plus, Delete, Download, Upload, Document, EditPen, Loading } from '@element-plus/icons-vue'
 
 const list = ref([])
 const total = ref(0)
@@ -236,6 +253,7 @@ const ketcherFrame = ref(null)
 const ketcherFileInput = ref(null)
 const ketcherSaving = ref(false)
 const ketcherReady = ref(false)
+const ketcherError = ref(false)
 
 const ketcherUrl = computed(() => `${import.meta.env.BASE_URL}ketcher/index.html`)
 
@@ -243,6 +261,7 @@ const getKetcher = () => ketcherFrame.value?.contentWindow?.ketcher
 
 const waitKetcher = async () => {
   ketcherReady.value = false
+  ketcherError.value = false
   // Ketcher 主包约 30MB，平板/WiFi 首次加载可能较慢，最多等 60 秒
   for (let i = 0; i < 240; i += 1) {
     if (getKetcher()?.setMolecule) {
@@ -251,12 +270,14 @@ const waitKetcher = async () => {
     }
     await new Promise((resolve) => setTimeout(resolve, 250))
   }
-  ElMessage.error('结构式编辑器加载失败，请关闭后重试')
+  ketcherError.value = true
+  ElMessage.error('结构式编辑器加载失败，请点重试')
 }
 
 const openKetcher = () => {
   showKetcher.value = true
   ketcherReady.value = false
+  ketcherError.value = false
   waitKetcher()
 }
 
@@ -648,6 +669,7 @@ onMounted(loadList)
   color: var(--text-placeholder);
 }
 .ketcher-box {
+  position: relative;
   height: 68vh;
   min-height: 420px;
   border: 1px solid var(--border-light);
@@ -676,5 +698,29 @@ onMounted(loadList)
   margin-left: auto;
   display: flex;
   gap: 8px;
+}
+.ketcher-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+.ketcher-loading__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.ketcher-loading__hint {
+  font-size: 12px;
+  color: var(--text-placeholder);
+}
+.ketcher-frame--hidden {
+  visibility: hidden;
 }
 </style>
