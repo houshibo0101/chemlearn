@@ -129,14 +129,50 @@ const onGithubClick = (event) => {
   ElMessage.success('已打开 GitHub，请确认内容后点 Submit new issue')
 }
 
+const fallbackCopy = (text) => {
+  const ta = document.createElement('textarea')
+  ta.value = text
+  ta.setAttribute('readonly', '')
+  ta.style.position = 'fixed'
+  ta.style.left = '-9999px'
+  ta.style.top = '0'
+  document.body.appendChild(ta)
+  const selection = document.getSelection()
+  const saved = selection && selection.rangeCount ? selection.getRangeAt(0) : null
+  ta.select()
+  ta.setSelectionRange(0, text.length)
+  let ok = false
+  try {
+    ok = document.execCommand('copy')
+  } catch {
+    ok = false
+  }
+  document.body.removeChild(ta)
+  if (saved && selection) {
+    selection.removeAllRanges()
+    selection.addRange(saved)
+  }
+  return ok
+}
+
 const copyReport = async () => {
   if (!validate()) return
   const text = `${form.type === 'bug' ? '[Bug]' : '[建议]'} ${form.title.trim()}\n\n${buildBody()}`
-  try {
-    await navigator.clipboard.writeText(text)
+  let ok = false
+  if (window.isSecureContext && navigator.clipboard) {
+    try {
+      await navigator.clipboard.writeText(text)
+      ok = true
+    } catch {
+      ok = false
+    }
+  }
+  // 局域网 HTTP 不是安全上下文，clipboard API 不可用，降级为 execCommand
+  if (!ok) ok = fallbackCopy(text)
+  if (ok) {
     ElMessage.success('报告已复制，可以粘贴发给管理员')
-  } catch {
-    ElMessage.error('复制失败，请手动选择文本复制')
+  } else {
+    ElMessage.error('复制失败，请长按/手动选择报告内容复制')
   }
 }
 </script>
