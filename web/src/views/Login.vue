@@ -92,8 +92,17 @@
                 </el-select>
               </el-form-item>
             </div>
-            <el-form-item label="邮箱（选填）">
-              <el-input v-model="registerForm.email" size="large" placeholder="可选" :prefix-icon="Message" />
+            <el-form-item label="邮箱" prop="email">
+              <el-input v-model="registerForm.email" size="large" placeholder="用于接收验证码" :prefix-icon="Message" />
+            </el-form-item>
+            <el-form-item label="邮箱验证码" prop="code">
+              <el-input v-model="registerForm.code" size="large" maxlength="6" placeholder="6 位验证码">
+                <template #append>
+                  <el-button :disabled="countdown > 0" :loading="codeLoading" @click="sendRegisterCode">
+                    {{ sendLabel }}
+                  </el-button>
+                </template>
+              </el-input>
             </el-form-item>
             <el-button class="auth-submit" type="primary" size="large" :loading="registerLoading" @click="handleRegister">
               注 册
@@ -109,11 +118,12 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import { User, Lock, Postcard, Message } from '@element-plus/icons-vue'
+import api from '@/api'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -130,9 +140,12 @@ const loginFormRef = ref()
 const registerFormRef = ref()
 const loginLoading = ref(false)
 const registerLoading = ref(false)
+const codeLoading = ref(false)
+const countdown = ref(0)
+let countdownTimer = null
 
 const loginForm = reactive({ username: '', password: '' })
-const registerForm = reactive({ username: '', password: '', full_name: '', grade: '', email: '' })
+const registerForm = reactive({ username: '', password: '', full_name: '', grade: '', email: '', code: '' })
 
 const loginRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
@@ -142,7 +155,56 @@ const loginRules = {
 const registerRules = {
   username: [{ required: true, min: 3, max: 64, message: '用户名3-64个字符', trigger: 'blur' }],
   password: [{ required: true, min: 6, message: '密码至少6位', trigger: 'blur' }],
+  email: [
+    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { type: 'email', message: '邮箱格式不正确', trigger: ['blur', 'change'] },
+  ],
+  code: [
+    { required: true, message: '请输入邮箱验证码', trigger: 'blur' },
+    { len: 6, message: '验证码为6位数字', trigger: 'blur' },
+  ],
 }
+
+const sendLabel = computed(() => countdown.value > 0 ? `${countdown.value}s 后重发` : '发送验证码')
+
+const startCountdown = () => {
+  countdown.value = 60
+  if (countdownTimer) clearInterval(countdownTimer)
+  countdownTimer = setInterval(() => {
+    countdown.value -= 1
+    if (countdown.value <= 0) {
+      clearInterval(countdownTimer)
+      countdownTimer = null
+      countdown.value = 0
+    }
+  }, 1000)
+}
+
+const sendRegisterCode = async () => {
+  const email = (registerForm.email || '').trim()
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    ElMessage.warning('请先填写正确的邮箱')
+    return
+  }
+  codeLoading.value = true
+  try {
+    const res = await api.post('/auth/send-code', { email })
+    ElMessage.success(res?.message || '验证码已发送，请查收邮箱')
+    if (res?.debug_code) {
+      registerForm.code = res.debug_code
+      ElMessage.info('调试模式：验证码已自动填入')
+    }
+    startCountdown()
+  } catch {
+    // 错误由 api 拦截器统一提示（如邮件服务未配置）
+  } finally {
+    codeLoading.value = false
+  }
+}
+
+onBeforeUnmount(() => {
+  if (countdownTimer) clearInterval(countdownTimer)
+})
 
 const switchTab = (tab) => {
   activeTab.value = tab

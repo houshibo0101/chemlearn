@@ -10,6 +10,7 @@ class UserRegister(BaseModel):
     username: str = Field(..., min_length=3, max_length=64)
     password: str = Field(..., min_length=6, max_length=128)
     email: Optional[str] = None
+    code: Optional[str] = Field(None, description="邮箱验证码（6位）")
     full_name: Optional[str] = None
     grade: Optional[str] = Field(None, description="学段：高一/高二/高三")
 

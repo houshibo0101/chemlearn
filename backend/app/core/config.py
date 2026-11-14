@@ -56,8 +56,12 @@ class Settings(BaseSettings):
     SMTP_PORT: int = 587
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
-    SMTP_FROM: str = "ChemLearn API <noreply@chemlearn.com>"
+    SMTP_FROM: str = "ChemLearn <noreply@chemlearn.com>"
     SMTP_USE_TLS: bool = True
+    # 注册是否强制邮箱验证码（生产默认开启；本地测试可设 false）
+    REQUIRE_EMAIL_VERIFICATION: bool = True
+    # 仅本地调试用：SMTP 未配置时把验证码返回给前端
+    SMTP_DEBUG: bool = False
 
     @model_validator(mode="after")
     def check_production_security(self):

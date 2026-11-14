@@ -13,6 +13,8 @@ if os.path.exists(_TEST_DB):
     os.remove(_TEST_DB)
 os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{_TEST_DB}"
 os.environ.setdefault("DEBUG", "true")
+# 注册邮箱验证默认关闭；专门的验证码用例里再打开
+os.environ.setdefault("REQUIRE_EMAIL_VERIFICATION", "false")
 
 import pytest
 import asyncio

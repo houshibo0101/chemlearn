@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
+from app.core.config import settings
 from app.core.security import hash_password, verify_password, create_access_token
 from app.core.deps import get_current_user
 from app.models import User, UserRole
@@ -41,7 +42,7 @@ async def send_code(data: SendCodeRequest, request: Request):
     """发送6位数字验证码到邮箱，有效期10分钟
     限流：同一邮箱1分钟最多1次，每天最多5次
     """
-    email = data.email.strip()
+    email = data.email.strip().lower()
     if not email or '@' not in email:
         raise HTTPException(status_code=400, detail="邮箱格式不正确")
 
@@ -53,14 +54,17 @@ async def send_code(data: SendCodeRequest, request: Request):
     if not rate_limiter.allow(f"code_day_{email}", 5, 86400):
         raise HTTPException(status_code=429, detail="该邮箱今日验证码已达上限（5次）")
 
+    if not settings.SMTP_HOST and not settings.SMTP_DEBUG:
+        raise HTTPException(status_code=503, detail="邮件服务未配置，请联系管理员")
+
     code = generate_code(email)
     success = send_verification_code(email, code)
 
     if success:
         return {"message": "验证码已发送，请查收邮箱", "debug": None}
-    else:
-        # SMTP未配置时，返回验证码用于调试（生产环境应移除）
-        return {"message": "验证码已生成（SMTP未配置，调试模式）", "debug_code": code}
+    if settings.SMTP_DEBUG:
+        return {"message": "验证码已生成（调试模式）", "debug_code": code}
+    raise HTTPException(status_code=502, detail="验证码邮件发送失败，请稍后重试")
 
 
 @router.post("/api-register", response_model=Token, summary="API平台注册（邮箱验证）")
@@ -131,11 +135,22 @@ async def register(data: UserRegister, request: Request, db: AsyncSession = Depe
         raise HTTPException(status_code=400, detail="用户名已存在")
 
     # 空字符串邮箱转None，避免UNIQUE约束冲突
-    email = data.email.strip() if data.email and data.email.strip() else None
+    email = data.email.strip().lower() if data.email and data.email.strip() else None
+    code = (data.code or "").strip()
+    if settings.REQUIRE_EMAIL_VERIFICATION:
+        if not email:
+            raise HTTPException(status_code=400, detail="请填写邮箱")
+        if not code:
+            raise HTTPException(status_code=400, detail="请输入邮箱验证码")
+        if not (code.isdigit() and len(code) == 6):
+            raise HTTPException(status_code=400, detail="邮箱验证码为6位数字")
     if email:
         result = await db.execute(select(User).where(User.email == email))
         if result.scalar_one_or_none():
             raise HTTPException(status_code=400, detail="邮箱已被注册")
+
+    if settings.REQUIRE_EMAIL_VERIFICATION and not verify_code(email, code):
+        raise HTTPException(status_code=400, detail="邮箱验证码错误或已过期")
 
     user = User(
         username=data.username,

@@ -20,12 +20,15 @@ class TestHealth:
 
     @pytest.mark.asyncio
     async def test_root_endpoint(self, client):
-        """测试根接口"""
+        """测试根接口：有官网时返回 HTML，无官网时返回 API 信息"""
         response = await client.get("/")
         assert response.status_code == 200
-        data = response.json()
-        assert "name" in data
-        assert "version" in data
+        if "text/html" in response.headers.get("content-type", ""):
+            assert "ChemLearn" in response.text and "<html" in response.text.lower()
+        else:
+            data = response.json()
+            assert "name" in data
+            assert "version" in data
 
 
 class TestAuth:

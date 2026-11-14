@@ -39,12 +39,12 @@ def send_verification_code(to_email: str, code: str) -> bool:
     html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
         <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-            <h2 style="color: #fff; margin: 0; font-size: 24px;">⚗️ ChemLearn API</h2>
+            <h2 style="color: #fff; margin: 0; font-size: 24px;">⚗️ 化学学习系统</h2>
             <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0;">邮箱验证码</p>
         </div>
         <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 12px 12px;">
             <p style="color: #333; font-size: 15px; line-height: 1.6;">您好，</p>
-            <p style="color: #333; font-size: 15px; line-height: 1.6;">您正在注册 ChemLearn API 开放平台，验证码为：</p>
+            <p style="color: #333; font-size: 15px; line-height: 1.6;">您正在注册 ChemLearn 化学学习系统，验证码为：</p>
             <div style="text-align: center; margin: 24px 0;">
                 <span style="display: inline-block; font-size: 36px; font-weight: bold; color: #667eea; letter-spacing: 8px; background: #fff; padding: 12px 32px; border-radius: 8px; border: 2px solid #667eea;">{code}</span>
             </div>
@@ -52,8 +52,8 @@ def send_verification_code(to_email: str, code: str) -> bool:
             <p style="color: #999; font-size: 12px; margin-top: 20px;">如非本人操作，请忽略此邮件。</p>
         </div>
         <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
-            © 2026 ChemLearn API 开放平台
+            © 2026 ChemLearn 化学学习系统
         </div>
     </div>
     """
-    return send_email(to_email, "ChemLearn API 注册验证码", html)
+    return send_email(to_email, "ChemLearn 化学学习系统注册验证码", html)
