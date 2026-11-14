@@ -156,7 +156,7 @@
             </div>
             <div v-if="imageList.length > 0" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
               <div v-for="(img, idx) in imageList" :key="idx" style="position:relative;border:1px solid var(--border-strong);border-radius:4px;overflow:hidden;">
-                <img :src="img" style="width:160px;height:120px;object-fit:contain;display:block;" @click="previewImage(img)" />
+                <img :src="mediaUrl(img)" style="width:160px;height:120px;object-fit:contain;display:block;" @click="previewImage(img)" />
                 <el-button type="danger" size="small" circle style="position:absolute;top:4px;right:4px;padding:0;width:24px;height:24px;" @click="removeImage(idx)">×</el-button>
               </div>
             </div>
@@ -214,6 +214,7 @@ import api from '@/api'
 import MathText from '@/components/MathText.vue'
 import ChemSymbolBar from '@/components/ChemSymbolBar.vue'
 import { insertAtActiveInput } from '@/utils/input'
+import { mediaUrl } from '@/utils/media'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Delete, Download, Upload, Document, EditPen } from '@element-plus/icons-vue'
 
@@ -425,7 +426,7 @@ const removeImage = (idx) => {
 }
 
 const previewImage = (url) => {
-  window.open(url, '_blank')
+  window.open(mediaUrl(url), '_blank')
 }
 
 const save = async () => {

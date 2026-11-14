@@ -253,6 +253,7 @@ import api from '@/api'
 import MathText from '@/components/MathText.vue'
 import ChemSymbolBar from '@/components/ChemSymbolBar.vue'
 import { insertAtActiveInput } from '@/utils/input'
+import { mediaUrl } from '@/utils/media'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Back, Close, ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 
@@ -284,7 +285,7 @@ const scratchPad = ref('')
 const currentQuestion = computed(() => questions.value[currentIndex.value])
 
 const parseOptions = (s) => { try { return JSON.parse(s) } catch { return [] } }
-const parseImages = (s) => { try { return s ? JSON.parse(s) : [] } catch { return [] } }
+const parseImages = (s) => { try { return (s ? JSON.parse(s) : []).map(mediaUrl) } catch { return [] } }
 const parseSubQuestions = (s) => { try { return s ? JSON.parse(s) : [] } catch { return [] } }
 const setSubAnswer = (qId, sqId, val) => {
   if (!subAnswers[qId]) subAnswers[qId] = {}
@@ -296,7 +297,7 @@ const getSubResult = (sqId) => {
   return r.sub_results.find(sr => String(sr.id) === String(sqId))
 }
 const previewImage = (src) => {
-  window.open(src, '_blank')
+  window.open(mediaUrl(src), '_blank')
 }
 
 const loadFavorites = async () => {

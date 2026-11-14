@@ -182,6 +182,7 @@ import api from '@/api'
 import MathText from '@/components/MathText.vue'
 import ChemSymbolBar from '@/components/ChemSymbolBar.vue'
 import { insertAtActiveInput } from '@/utils/input'
+import { mediaUrl } from '@/utils/media'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const assignments = ref([])
@@ -242,10 +243,13 @@ function parsedOptions(options) {
 }
 
 function parseImages(images) {
+  let list = []
   if (typeof images === 'string') {
-    try { return JSON.parse(images) } catch { return [] }
+    try { list = JSON.parse(images) } catch { list = [] }
+  } else {
+    list = images || []
   }
-  return images || []
+  return list.map(mediaUrl)
 }
 
 async function doAssignment(row) {
