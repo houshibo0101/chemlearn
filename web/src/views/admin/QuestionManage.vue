@@ -150,6 +150,10 @@
         </div>
         <el-form-item label="题目图片">
           <div style="width:100%;">
+            <div style="margin-bottom:10px;">
+              <el-button :icon="EditPen" @click="openKetcher">画结构式 / 导入 KingDraw</el-button>
+              <span class="ketcher-hint">支持 KingDraw 导出的 .cdx / .mol，画完插入为题目图片</span>
+            </div>
             <div v-if="imageList.length > 0" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
               <div v-for="(img, idx) in imageList" :key="idx" style="position:relative;border:1px solid var(--border-strong);border-radius:4px;overflow:hidden;">
                 <img :src="img" style="width:160px;height:120px;object-fit:contain;display:block;" @click="previewImage(img)" />
@@ -175,6 +179,32 @@
         <el-button type="primary" @click="save" :loading="saving">保存</el-button>
       </template>
     </el-dialog>
+
+    <!-- 结构式编辑器（Ketcher，支持 KingDraw 导出的 cdx/mol） -->
+    <el-dialog v-model="showKetcher" title="结构式编辑器" width="92%" top="3vh" :close-on-click-modal="false" @opened="waitKetcher">
+      <div class="ketcher-box">
+        <iframe ref="ketcherFrame" :src="ketcherUrl" class="ketcher-frame" title="结构式编辑器" />
+      </div>
+      <div class="ketcher-bar">
+        <el-button @click="triggerKetcherImport">导入 KingDraw 文件</el-button>
+        <input
+          ref="ketcherFileInput"
+          type="file"
+          accept=".cdx,.mol,.sdf,.cdxml,.smi,.smiles"
+          style="display:none"
+          @change="handleKetcherImport"
+        />
+        <span class="ketcher-hint">
+          KingDraw 里「另存为」.cdx 或 .mol；原生 .king 请先导出。也可直接粘贴 SMILES。
+        </span>
+        <div class="ketcher-bar__actions">
+          <el-button @click="showKetcher = false">取消</el-button>
+          <el-button type="primary" :loading="ketcherSaving" :disabled="!ketcherReady" @click="insertKetcherImage">
+            插入到题目
+          </el-button>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -185,7 +215,7 @@ import MathText from '@/components/MathText.vue'
 import ChemSymbolBar from '@/components/ChemSymbolBar.vue'
 import { insertAtActiveInput } from '@/utils/input'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Delete, Download, Upload, Document } from '@element-plus/icons-vue'
+import { Plus, Delete, Download, Upload, Document, EditPen } from '@element-plus/icons-vue'
 
 const list = ref([])
 const total = ref(0)
@@ -200,6 +230,100 @@ const optionList = ref([])
 const fileInput = ref(null)
 const importing = ref(false)
 const imageList = ref([])
+const showKetcher = ref(false)
+const ketcherFrame = ref(null)
+const ketcherFileInput = ref(null)
+const ketcherSaving = ref(false)
+const ketcherReady = ref(false)
+
+const ketcherUrl = computed(() => `${import.meta.env.BASE_URL}ketcher/index.html`)
+
+const getKetcher = () => ketcherFrame.value?.contentWindow?.ketcher
+
+const waitKetcher = async () => {
+  ketcherReady.value = false
+  // Ketcher 主包约 30MB，平板/WiFi 首次加载可能较慢，最多等 60 秒
+  for (let i = 0; i < 240; i += 1) {
+    if (getKetcher()?.setMolecule) {
+      ketcherReady.value = true
+      return
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250))
+  }
+  ElMessage.error('结构式编辑器加载失败，请关闭后重试')
+}
+
+const openKetcher = () => {
+  showKetcher.value = true
+  ketcherReady.value = false
+  waitKetcher()
+}
+
+const triggerKetcherImport = () => ketcherFileInput.value?.click()
+
+const fileToBase64 = (buffer) => {
+  const bytes = new Uint8Array(buffer)
+  let binary = ''
+  const chunk = 0x8000
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk))
+  }
+  return btoa(binary)
+}
+
+const handleKetcherImport = async (event) => {
+  const file = event.target.files?.[0]
+  event.target.value = ''
+  if (!file) return
+  const name = file.name.toLowerCase()
+  if (name.endsWith('.king')) {
+    ElMessage.warning('KingDraw 原生 .king 暂不支持，请在 KingDraw 中另存为 .cdx 或 .mol')
+    return
+  }
+  const ketcher = getKetcher()
+  if (!ketcher?.setMolecule) {
+    ElMessage.error('编辑器还没加载完成，请稍候')
+    return
+  }
+  try {
+    const data = name.endsWith('.cdx')
+      ? fileToBase64(await file.arrayBuffer())
+      : await file.text()
+    await ketcher.setMolecule(data)
+    ElMessage.success('已导入：' + file.name)
+  } catch (err) {
+    ElMessage.error('无法解析该文件，请在 KingDraw 中导出 .mol 或 .cdx 后重试')
+  }
+}
+
+const insertKetcherImage = async () => {
+  const ketcher = getKetcher()
+  if (!ketcher) return
+  ketcherSaving.value = true
+  try {
+    const smiles = await ketcher.getSmiles()
+    if (!smiles) {
+      ElMessage.warning('画板还是空的，先画一个结构式')
+      return
+    }
+    const mol = await ketcher.getMolfile()
+    const blob = await ketcher.generateImage(mol, { outputFormat: 'png' })
+    const formData = new FormData()
+    formData.append('file', new File([blob], `structure-${Date.now()}.png`, { type: 'image/png' }))
+    const res = await api.post('/questions/upload-image', formData)
+    if (res?.url) {
+      imageList.value.push(res.url)
+      showKetcher.value = false
+      ElMessage.success('结构式已插入题目图片')
+    } else {
+      ElMessage.error('上传失败：' + (res?.detail || '未知错误'))
+    }
+  } catch (err) {
+    ElMessage.error('插入失败：' + (err?.message || err))
+  } finally {
+    ketcherSaving.value = false
+  }
+}
 
 const uploadUrl = computed(() => `${api.defaults.baseURL}/questions/upload-image`)
 const uploadHeaders = computed(() => ({ 'Authorization': `Bearer ${localStorage.getItem('token')}` }))
@@ -505,5 +629,35 @@ onMounted(loadList)
 .chem-insert-bar__hint {
   font-size: 11.5px;
   color: var(--text-placeholder);
+}
+.ketcher-box {
+  height: 68vh;
+  min-height: 420px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+.ketcher-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+.ketcher-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+.ketcher-hint {
+  font-size: 11.5px;
+  color: var(--text-placeholder);
+}
+.ketcher-bar__actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
 }
 </style>
