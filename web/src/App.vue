@@ -60,6 +60,9 @@
       </el-menu>
       <div class="sidebar-footer">
         <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <el-button plain size="small" style="flex:1;" @click="showBugReport = true">
+            <el-icon><Warning /></el-icon> 反馈 Bug
+          </el-button>
           <el-button plain size="small" style="flex:1;" @click="toggleDark">
             <el-icon><component :is="isDark ? 'Sunny' : 'Moon'" /></el-icon>
             {{ isDark ? '亮色模式' : '暗色模式' }}
@@ -93,6 +96,7 @@
             </span>
             <template #dropdown>
               <el-dropdown-menu>
+                <el-dropdown-item command="bug">反馈 Bug</el-dropdown-item>
                 <el-dropdown-item command="profile">个人中心</el-dropdown-item>
                 <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
               </el-dropdown-menu>
@@ -160,6 +164,7 @@
           </div>
         </template>
       </div>
+      <BugReportDialog v-model="showBugReport" />
     </div>
   </div>
 </template>
@@ -172,6 +177,7 @@ import { ElMessageBox } from 'element-plus'
 import { DataLine, Moon, Sunny, Bell } from '@element-plus/icons-vue'
 import { getTheme, toggleTheme as doToggleTheme } from '@/utils/theme'
 import api from '@/api'
+import BugReportDialog from '@/components/BugReportDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -179,6 +185,7 @@ const userStore = useUserStore()
 const isDesktop = ref(window.innerWidth >= 768)
 const isPublicPage = computed(() => route.path === '/login' || route.path === '/register')
 const isDark = ref(getTheme() === 'dark')
+const showBugReport = ref(false)
 
 // ===== 未读通知轮询 =====
 const unreadCount = ref(0)
@@ -207,7 +214,8 @@ const toggleDark = () => {
 }
 
 const handleCmd = (cmd) => {
-  if (cmd === 'profile') router.push('/profile')
+  if (cmd === 'bug') showBugReport.value = true
+  else if (cmd === 'profile') router.push('/profile')
   else if (cmd === 'logout') logout()
 }
 

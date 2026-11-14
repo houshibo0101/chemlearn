@@ -34,7 +34,7 @@
 | 文件 | 平台 | 说明 |
 |---|---|---|
 | [ChemLearn-Deployer-v1.3.0.exe](https://github.com/houshibo0101/chemlearn/releases/tag/v1.3.0) | Linux 服务器 | 填 IP、SSH 密码和 AI Key，自动装好 nginx / Python / systemd，3–6 分钟完成 |
-| [ChemLearnWindows-v2.1.13.exe](https://github.com/houshibo0101/chemlearn/releases/tag/windows-v2.1.13) | Windows 本机 | 双击部署到本机，界面里看地址 / 开系统 / 重置，局域网可访问 |
+| [ChemLearnWindows-v2.1.14.exe](https://github.com/houshibo0101/chemlearn/releases/tag/windows-v2.1.14) | Windows 本机 | 双击部署到本机，界面里看地址 / 开系统 / 重置，局域网可访问 |
 | [题库数据包 453 题](https://github.com/houshibo0101/chemlearn/releases/tag/question-bank-v1) | 通用 | 解压到 `backend/import_data/` 后跑导入脚本 |
 
 > Linux 部署器内置完整部署包（源码 + 前端 + 依赖清单），目标机只需能联网的 Ubuntu / Debian。
@@ -277,3 +277,9 @@ deployer/windows/.buildenv/Scripts/python deployer/windows/build_win.py --with-p
 ## 许可
 
 [MIT](LICENSE)
+## 反馈 Bug
+
+登录后侧边栏「反馈 Bug」，或官网页脚的「反馈 Bug」，会打开预填好的 GitHub Issue
+（自动带页面、浏览器、时间）。也可直接访问
+[新建 Issue](https://github.com/houshibo0101/chemlearn/issues/new?labels=bug&template=bug_report.yml)。
+没有 GitHub 账号可点「复制报告」发给管理员。

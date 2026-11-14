@@ -1,0 +1,63 @@
+name: Bug 报告
+description: 反馈使用 ChemLearn 时遇到的问题
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！请尽量写清楚复现步骤，方便定位。
+        如果是页面问题，请附上截图；日志可以贴 `deployer.log` 或浏览器控制台。
+
+  - type: textarea
+    id: what
+    attributes:
+      label: 问题描述
+      description: 你看到了什么？期望的结果是什么？
+      placeholder: 例如：插入结构式后点保存，重新打开图片消失
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 打开 …
+        2. 点击 …
+        3. 出现 …
+    validations:
+      required: true
+
+  - type: input
+    id: page
+    attributes:
+      label: 页面地址
+      placeholder: http://192.168.9.108:901/chem/app/...
+    validations:
+      required: false
+
+  - type: input
+    id: browser
+    attributes:
+      label: 浏览器 / 设备
+      placeholder: Chrome 131 / Windows 11，或 iPad Safari
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: 版本
+      description: 页面右下角或部署器窗口里的版本号
+      placeholder: v2.1.13
+    validations:
+      required: false
+
+  - type: input
+    id: contact
+    attributes:
+      label: 联系方式（可选）
+      placeholder: 邮箱 / QQ / 微信
+    validations:
+      required: false
