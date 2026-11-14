@@ -1,4 +1,4 @@
-﻿# 化学学习系统 · ChemLearn
+# 化学学习系统 · ChemLearn
 
 [![CI](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml/badge.svg)](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml)
 
@@ -226,6 +226,15 @@ deployer/windows/.buildenv/Scripts/python deployer/windows/build_win.py --with-p
 - 默认账号 `admin / admin123`，登录后请到个人中心修改
 
 详细操作、防火墙设置、备份与卸载见 [`deployer/windows/使用说明.txt`](deployer/windows/使用说明.txt)。
+
+### 备份策略
+
+- 所有升级前的备份只写服务器 `/home/mc/studycenter/化学/backups/`：
+  - `backend/` 后端 app 历史版本
+  - `frontend/` 前端 dist/app 历史版本
+  - `db/` 数据库备份
+- 本地仓库不保留备份副本，只保留源码和构建工具
+- 数据库备份脚本 [`backend/backup_db.sh`](backend/backup_db.sh)，默认保留最近 7 天
 
 ![Windows 部署器](docs/deployer-windows.png)
 

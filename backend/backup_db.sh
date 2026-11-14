@@ -4,8 +4,9 @@
 # 用法：./backup_db.sh
 
 # 配置
-BACKUP_DIR="/home/mc/chemlearn/backups"
-DB_PATH="/home/mc/chemlearn/backend/chemlearn.db"
+BASE_DIR="/home/mc/studycenter/化学"
+BACKUP_DIR="$BASE_DIR/backups/db"
+DB_PATH="$BASE_DIR/backend/chemlearn.db"
 DATE=$(date +%Y%m%d_%H%M%S)
 KEEP_DAYS=7
 
