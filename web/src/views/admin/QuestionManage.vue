@@ -110,6 +110,10 @@
         </el-form-item>
         <el-form-item label="正确答案" required>
           <el-input v-model="form.answer" type="textarea" :rows="2" :placeholder="form.question_type==='single'?'如：A':form.question_type==='multiple'?'如：A,C':'填写正确答案'" />
+          <div v-if="form.answer" class="answer-live">
+            答案预览：<MathText :text="form.answer" inline />
+            <span>（仍按原文保存，判分不受影响）</span>
+          </div>
         </el-form-item>
         <el-form-item label="解析">
           <el-input v-model="form.analysis" type="textarea" :rows="3" placeholder="解题思路和解析" />
@@ -129,10 +133,13 @@
           <div v-for="opt in optionList.filter(o => o.text)" :key="opt.key" class="auto-preview__row">
             <b>{{ opt.key }}.</b> <MathText :text="opt.text" inline />
           </div>
+          <div v-if="form.answer" class="auto-preview__row">
+            <b>正确答案：</b><MathText :text="form.answer" inline />
+          </div>
           <div v-if="form.analysis" class="auto-preview__row auto-preview__analysis">
             <b>解析：</b><MathText :text="form.analysis" />
           </div>
-          <div v-if="!form.title && !form.content && !form.analysis" class="auto-preview__empty">
+          <div v-if="!form.title && !form.content && !form.answer && !form.analysis" class="auto-preview__empty">
             输入 H2、H2SO4、Ca(OH)2 等，这里会实时显示 H₂、H₂SO₄、Ca(OH)₂
           </div>
         </div>
@@ -456,5 +463,14 @@ onMounted(loadList)
 .auto-preview__empty {
   font-size: 12px;
   color: var(--text-placeholder);
+}
+.answer-live {
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+.answer-live span {
+  color: var(--text-placeholder);
+  font-size: 12px;
 }
 </style>

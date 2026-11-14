@@ -47,7 +47,7 @@ class QuestionOut(BaseModel):
     source: Optional[str] = None
     sub_questions: Optional[str] = None
     creator_id: Optional[int] = None
-    created_at: datetime
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
