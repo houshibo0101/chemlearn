@@ -34,7 +34,7 @@
 | 文件 | 平台 | 说明 |
 |---|---|---|
 | [ChemLearn-Deployer-v1.3.0.exe](https://github.com/houshibo0101/chemlearn/releases/tag/v1.3.0) | Linux 服务器 | 填 IP、SSH 密码和 AI Key，自动装好 nginx / Python / systemd，3–6 分钟完成 |
-| [ChemLearnWindows-v2.1.16.exe](https://github.com/houshibo0101/chemlearn/releases/tag/windows-v2.1.16) | Windows 本机 | 双击部署到本机，界面里看地址 / 开系统 / 重置，局域网可访问 |
+| [ChemLearnWindows-v2.1.17.exe](https://github.com/houshibo0101/chemlearn/releases/tag/windows-v2.1.17) | Windows 本机 | 双击部署到本机，界面里看地址 / 开系统 / 重置，局域网可访问 |
 | [题库数据包 453 题](https://github.com/houshibo0101/chemlearn/releases/tag/question-bank-v1) | 通用 | 解压到 `backend/import_data/` 后跑导入脚本 |
 
 > Linux 部署器内置完整部署包（源码 + 前端 + 依赖清单），目标机只需能联网的 Ubuntu / Debian。
@@ -174,6 +174,21 @@ REQUIRE_EMAIL_VERIFICATION=true
 QQ 邮箱用 465 端口 + SSL，密码填邮箱设置里的「授权码」而不是登录密码。
 SMTP 未配置时，注册页点发送验证码会提示「邮件服务未配置」。
 本地调试可设 `SMTP_DEBUG=true` 直接返回验证码；生产必须保持 `false`。
+
+### 使用 DeepSeek Flash
+
+在管理员「账号管理 → AI Token 消耗」里填：
+
+```text
+API 地址：https://api.deepseek.com
+模型：    deepseek-flash
+API Key： sk-...（platform.deepseek.com 创建）
+```
+
+应用调用的是 OpenAI 兼容接口 `/chat/completions`，地址不要带 `/chat/completions`。
+DeepSeek Flash 默认开启思考模式，首次响应可能较慢；如遇超时可在 `.env` 中把
+`AI_TIMEOUT` 调到 `120`。当前应用不传 `thinking` 参数，因此使用默认思考模式，
+`temperature` 会被忽略但不会报错。
 
 ### 2. 导入题库（可选）
 

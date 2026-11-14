@@ -16,7 +16,7 @@
     ChemLearnWindows.exe --reset            重新部署（清空用户数据，恢复内置题库）
     ChemLearnWindows.exe --console          纯命令行模式（排障用，窗口里能看到日志）
 """
-VERSION = "2.1.16"
+VERSION = "2.1.17"
 APP_NAME = "化学学习系统"
 DATA_FOLDER = "ChemLearnWindows"
 PAYLOAD_NAME = "payload_chem.tar.gz"
@@ -207,6 +207,7 @@ def apply_saved_settings():
         "SMTP_DEBUG": "false",
         "AI_API_BASE": (settings.get("ai_api_base") or "").strip(),
         "AI_API_KEY": (settings.get("ai_api_key") or "").strip(),
+        "AI_MODEL": (settings.get("ai_model") or "").strip(),
     }
 
     upload_dir = (settings.get("upload_dir") or "").strip()
@@ -972,15 +973,26 @@ class DeployerApp:
             return var
 
         heading("邮件 SMTP（可选，填完整后注册才要求邮箱验证码）", 0)
-        smtp_host = field("SMTP 主机", "smtp_host", "smtp.qq.com", row=1)
-        smtp_port = field("端口 / SSL", "smtp_port", "465", row=2)
-        smtp_user = field("SMTP 账号", "smtp_user", row=3)
-        smtp_password = field("SMTP 授权码", "smtp_password", show="*", row=4)
-        smtp_from = field("发件地址（空=账号）", "smtp_from", row=5)
+        tk.Label(body, text="SMTP 主机 / 端口", bg=BG, fg=TEXT,
+                 font=("Microsoft YaHei UI", 9)).grid(
+            row=1, column=0, sticky="w", padx=(0, px(10)), pady=px(4))
+        smtp_box = tk.Frame(body, bg=BG)
+        smtp_box.grid(row=1, column=1, sticky="we", pady=px(4))
+        smtp_box.columnconfigure(0, weight=1)
+        smtp_host = tk.StringVar(value=str(settings.get("smtp_host", "smtp.qq.com") or ""))
+        tk.Entry(smtp_box, textvariable=smtp_host, font=("Consolas", 10),
+                 bd=1, relief="solid").grid(row=0, column=0, sticky="we")
+        smtp_port = tk.StringVar(value=str(settings.get("smtp_port", "465") or "465"))
+        tk.Entry(smtp_box, textvariable=smtp_port, font=("Consolas", 10),
+                 bd=1, relief="solid", width=7).grid(row=0, column=1, padx=(px(8), 0))
+        smtp_user = field("SMTP 账号", "smtp_user", row=2)
+        smtp_password = field("SMTP 授权码", "smtp_password", show="*", row=3)
+        smtp_from = field("发件地址（空=账号）", "smtp_from", row=4)
 
-        heading("AI 问答（可选，留空则使用内置默认配置）", 6)
-        ai_base = field("API 地址", "ai_api_base", "https://api.openai.com/v1", row=7)
-        ai_key = field("API Key", "ai_api_key", show="*", row=8)
+        heading("AI 问答（可选，留空则使用内置默认配置）", 5)
+        ai_base = field("API 地址", "ai_api_base", "https://api.openai.com/v1", row=6)
+        ai_key = field("API Key", "ai_api_key", show="*", row=7)
+        ai_model = field("模型", "ai_model", "gpt-4o-mini", row=8)
 
         heading("上传文件目录（可选，空=数据目录下 backend\\uploads）", 9)
         tk.Label(body, text="文件目录", bg=BG, fg=TEXT,
@@ -1020,6 +1032,7 @@ class DeployerApp:
                 "smtp_from": smtp_from.get().strip(),
                 "ai_api_base": ai_base.get().strip(),
                 "ai_api_key": ai_key.get().strip(),
+                "ai_model": ai_model.get().strip(),
                 "upload_dir": upload_var.get().strip(),
             }
             save_deployer_settings(data)
