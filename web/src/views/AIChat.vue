@@ -51,7 +51,9 @@
       />
       <el-button type="primary" :loading="loading" class="composer__send" @click="send">发送</el-button>
     </div>
-    <div style="font-size:11px;color:var(--text-disabled);margin-top:8px;text-align:center;">回车发送 · Ctrl+回车换行 · 对话自动保存</div>
+    <div style="font-size:11px;color:var(--text-disabled);margin-top:8px;text-align:center;">
+      只回答化学学习问题 · 累计 5 次无关提问会停用，需老师解封 · 回车发送
+    </div>
   </div>
 </template>
 

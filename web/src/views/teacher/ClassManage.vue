@@ -67,12 +67,28 @@
     </el-dialog>
 
     <!-- 学生列表弹窗 -->
-    <el-dialog v-model="showStudents" :title="`${currentClass?.name || ''} - 学生列表`" width="600px">
+    <el-dialog v-model="showStudents" :title="`${currentClass?.name || ''} - 学生列表`" width="760px">
       <el-table :data="students" stripe>
-        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="username" label="用户名" />
         <el-table-column prop="full_name" label="姓名" />
-        <el-table-column prop="grade" label="学段" width="100" />
+        <el-table-column prop="grade" label="学段" width="90" />
+        <el-table-column label="AI 问答" width="150">
+          <template #default="{ row }">
+            <el-tag :type="row.ai_banned ? 'danger' : 'success'" size="small">
+              {{ row.ai_banned ? '已停用' : '正常' }}
+            </el-tag>
+            <span v-if="row.ai_offtopic_count" style="margin-left:6px;font-size:11px;color:var(--text-placeholder);">
+              {{ row.ai_offtopic_count }}/5
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="110">
+          <template #default="{ row }">
+            <el-button v-if="row.ai_banned" size="small" type="warning" @click="unbanAI(row)">解封 AI</el-button>
+            <span v-else style="font-size:12px;color:var(--text-placeholder);">—</span>
+          </template>
+        </el-table-column>
       </el-table>
     </el-dialog>
 
@@ -184,6 +200,17 @@ async function viewStudents(row) {
   const res = await api.get(`/classes/${row.id}/students`)
   students.value = res.items || []
   showStudents.value = true
+}
+
+async function unbanAI(row) {
+  try {
+    await ElMessageBox.confirm(`确定解封「${row.full_name || row.username}」的 AI 问答吗？`, '解封 AI', { type: 'warning' })
+    await api.post(`/classes/${currentClass.value.id}/students/${row.id}/ai-unban`)
+    ElMessage.success('已解封 AI 问答')
+    await viewStudents(currentClass.value)
+  } catch (e) {
+    if (e !== 'cancel') ElMessage.error('解封失败：' + (e.response?.data?.detail || e.message))
+  }
 }
 
 async function viewStats(row) {

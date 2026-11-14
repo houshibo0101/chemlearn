@@ -14,6 +14,7 @@ from app.models.notification import Notification
 from app.models.paper import Paper, PaperAttempt, PaperStatus, PaperGenStatus
 from app.models.favorite import Favorite
 from app.models.ai_task import AITask
+from app.models.ai_restriction import AIRestriction
 from app.models.matching import (
     MatchingSet, MatchingPair, MatchingRecord, CATEGORY_LABELS, DIFFICULTY_LABELS,
 )
@@ -21,5 +22,5 @@ from app.models.matching import (
 __all__ = ["User", "UserRole", "Question", "QuestionType", "Difficulty", "WrongQuestion", "APIKey", "ChatHistory", "AIUsage",
            "ClassRoom", "TeacherClass", "Assignment", "AssignmentClass", "AssignmentSubmission", "AssignmentStatus",
            "Exam", "ExamClass", "ExamQuestion", "ExamSubmission", "ExamStatus", "APICallLog", "OfflineBind",
-           "PracticeRecord", "Notification", "Favorite", "AITask",
+           "PracticeRecord", "Notification", "Favorite", "AITask", "AIRestriction",
            "MatchingSet", "MatchingPair", "MatchingRecord", "CATEGORY_LABELS", "DIFFICULTY_LABELS"]

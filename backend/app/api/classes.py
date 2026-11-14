@@ -12,6 +12,7 @@ from app.core.database import AsyncSessionLocal
 from app.core.deps import get_current_user
 from app.models.user import User, UserRole
 from app.models.class_room import ClassRoom, TeacherClass
+from app.models.ai_restriction import AIRestriction
 
 router = APIRouter(prefix="/classes", tags=["班级管理"])
 
@@ -190,15 +191,67 @@ async def get_class_students(
         select(User).where(User.class_id == class_id, User.role == UserRole.STUDENT).order_by(User.id)
     )).scalars().all()
 
+    restrictions = {}
+    if students:
+        rows = (await db.execute(
+            select(AIRestriction).where(AIRestriction.user_id.in_([s.id for s in students]))
+        )).scalars().all()
+        restrictions = {r.user_id: r for r in rows}
+
     return {
         "items": [{
             "id": s.id,
             "username": s.username,
             "full_name": s.full_name,
             "grade": s.grade,
+            "ai_banned": bool(restrictions.get(s.id) and restrictions[s.id].banned),
+            "ai_offtopic_count": (restrictions[s.id].offtopic_count or 0) if s.id in restrictions else 0,
             "created_at": s.created_at.isoformat() if s.created_at else None,
         } for s in students],
         "total": len(students),
+    }
+
+
+@router.post("/{class_id}/students/{student_id}/ai-unban")
+async def unban_student_ai(
+    class_id: int,
+    student_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """老师解封学生的 AI 问答（仅限自己管理的班级；管理员不限）"""
+    if current_user.role not in (UserRole.TEACHER, UserRole.ADMIN):
+        raise HTTPException(403, "仅老师或管理员可解封")
+    if current_user.role == UserRole.TEACHER:
+        is_teacher = (await db.execute(
+            select(TeacherClass).where(
+                TeacherClass.teacher_id == current_user.id,
+                TeacherClass.class_id == class_id,
+            )
+        )).scalar_one_or_none()
+        if not is_teacher:
+            raise HTTPException(403, "你不管理该班级")
+    student = (await db.execute(
+        select(User).where(
+            User.id == student_id,
+            User.class_id == class_id,
+            User.role == UserRole.STUDENT,
+        )
+    )).scalar_one_or_none()
+    if not student:
+        raise HTTPException(404, "该学生不在此班级")
+
+    restriction = (await db.execute(
+        select(AIRestriction).where(AIRestriction.user_id == student_id)
+    )).scalar_one_or_none()
+    if restriction:
+        restriction.banned = False
+        restriction.offtopic_count = 0
+        await db.commit()
+    return {
+        "message": "已解封 AI 问答",
+        "ai_banned": False,
+        "ai_offtopic_count": 0,
     }
 
 

@@ -34,6 +34,11 @@ SYSTEM_PROMPT = r"""你是一位专业的高中化学老师，名叫"化学助�
 - 复杂公式单独一行用 $$...$$ 包裹
 - 计算题要写出步骤
 - 不要直接给出选择题答案，而是讲解知识点和解题思路
+
+【回答范围】
+只回答高中化学、化学学习方法与化学题目相关的问题。
+如果用户的问题与化学/化学学习无关（闲聊、编程、娱乐、其他学科、写文案、角色扮演等），
+不要回答，只输出一行：[OFF_TOPIC]
 """
 
 
@@ -300,6 +305,10 @@ class AIService:
 
         # 调用 AI
         reply, token_info = await AIService.chat(message=message, history=history, context=context)
+
+        # 无关问题不写入历史、不计 token，由 API 层负责计数/停用
+        if reply.strip().startswith("[OFF_TOPIC]"):
+            return reply
 
         # 保存用户消息
         await AIService.save_message(db, user_id, "user", message)
