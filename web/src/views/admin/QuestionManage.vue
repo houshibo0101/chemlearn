@@ -68,6 +68,11 @@
 
     <!-- 编辑/创建弹窗 -->
     <el-dialog v-model="dialogVisible" :title="editing ? '编辑题目' : '上传题目'" width="90%" top="5vh">
+      <div class="chem-insert-bar">
+        <span class="chem-insert-bar__label">化学符号：</span>
+        <ChemSymbolBar @insert="insertSymbol" />
+        <span class="chem-insert-bar__hint">点一下要输入的框，再点符号；H2 会自动变 H₂</span>
+      </div>
       <el-form :model="form" label-width="90px" size="default">
         <el-form-item label="题目标题" required>
           <el-input v-model="form.title" type="textarea" :rows="2" placeholder="题干内容" />
@@ -177,6 +182,8 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import api from '@/api'
 import MathText from '@/components/MathText.vue'
+import ChemSymbolBar from '@/components/ChemSymbolBar.vue'
+import { insertAtActiveInput } from '@/utils/input'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Delete, Download, Upload, Document } from '@element-plus/icons-vue'
 
@@ -227,6 +234,12 @@ const resetForm = () => {
   Object.assign(form, { title: '', content: '', question_type: 'single', difficulty: 'medium', grade: '', knowledge_point: '', options: '', answer: '', analysis: '' })
   optionList.value = []
   imageList.value = []
+}
+
+const insertSymbol = (text) => {
+  if (!insertAtActiveInput(text)) {
+    ElMessage.info('请先点一下要输入的题目框，再点符号')
+  }
 }
 
 const openCreate = () => {
@@ -472,5 +485,25 @@ onMounted(loadList)
 .answer-live span {
   color: var(--text-placeholder);
   font-size: 12px;
+}
+.chem-insert-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 0 10px;
+  margin-bottom: 6px;
+  background: var(--bg-secondary);
+}
+.chem-insert-bar__label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.chem-insert-bar__hint {
+  font-size: 11.5px;
+  color: var(--text-placeholder);
 }
 </style>

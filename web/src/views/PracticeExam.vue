@@ -99,6 +99,11 @@
         <div v-if="answers[currentQuestion.id]" style="margin-top:6px;font-size:12px;color:var(--text-placeholder);">
           预览：<MathText :text="answers[currentQuestion.id]" inline />
         </div>
+        <div v-if="!examSubmitted && !currentQuestion.options" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;">
+          <span style="font-size:12px;color:var(--text-secondary);">插入符号：</span>
+          <ChemSymbolBar @insert="insertSymbol" />
+          <span style="font-size:11.5px;color:var(--text-placeholder);">先点答案框，再点 ↑ 气体 / ↓ 沉淀</span>
+        </div>
 
         <!-- 交卷后显示结果 -->
         <div v-if="examSubmitted && results[currentQuestion.id]" style="margin-top:20px;">
@@ -246,6 +251,8 @@ import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/api'
 import MathText from '@/components/MathText.vue'
+import ChemSymbolBar from '@/components/ChemSymbolBar.vue'
+import { insertAtActiveInput } from '@/utils/input'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Back, Close, ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 
@@ -340,6 +347,12 @@ const isWrongOption = (q, key) => {
 }
 
 // 计时器
+const insertSymbol = (text) => {
+  if (!insertAtActiveInput(text)) {
+    ElMessage.info('请先点一下答案输入框，再点符号')
+  }
+}
+
 const startTimer = () => {
   timer = setInterval(() => { elapsed.value++ }, 1000)
 }

@@ -31,6 +31,11 @@
 
     <!-- 考试界面 -->
     <el-dialog v-model="showExam" :title="`${currentExam?.title} - 倒计时 ${formatTime(remaining)}`" width="900px" :close-on-click-modal="false" :close-on-press-escape="false" @close="confirmClose">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+        <span style="font-size:12px;color:var(--text-secondary);">化学符号：</span>
+        <ChemSymbolBar @insert="insertSymbol" />
+        <span style="font-size:11.5px;color:var(--text-placeholder);">先点答案框，再点 ↑ 气体 / ↓ 沉淀</span>
+      </div>
       <div v-if="currentExam" class="exam-content">
         <div class="exam-info">
           <el-tag>总分：{{ currentExam.total_score }}</el-tag>
@@ -181,10 +186,18 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import api from '@/api'
 import MathText from '@/components/MathText.vue'
+import ChemSymbolBar from '@/components/ChemSymbolBar.vue'
+import { insertAtActiveInput } from '@/utils/input'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const exams = ref([])
 const loading = ref(false)
+
+const insertSymbol = (text) => {
+  if (!insertAtActiveInput(text)) {
+    ElMessage.info('请先点一下答案输入框，再点符号')
+  }
+}
 const showExam = ref(false)
 const showResult = ref(false)
 const currentExam = ref(null)

@@ -31,6 +31,11 @@
 
     <!-- 做作业弹窗 -->
     <el-dialog v-model="showDo" :title="currentAssignment?.title" width="900px" :close-on-click-modal="false">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+        <span style="font-size:12px;color:var(--text-secondary);">化学符号：</span>
+        <ChemSymbolBar @insert="insertSymbol" />
+        <span style="font-size:11.5px;color:var(--text-placeholder);">先点答案框，再点 ↑ 气体 / ↓ 沉淀</span>
+      </div>
       <div v-if="currentAssignment" class="assignment-content">
         <div class="assignment-tools">
           <el-button @click="showCalc = !showCalc" circle title="计算器" size="small">🧮</el-button>
@@ -175,10 +180,18 @@
 import { ref, onMounted } from 'vue'
 import api from '@/api'
 import MathText from '@/components/MathText.vue'
+import ChemSymbolBar from '@/components/ChemSymbolBar.vue'
+import { insertAtActiveInput } from '@/utils/input'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const assignments = ref([])
 const loading = ref(false)
+
+const insertSymbol = (text) => {
+  if (!insertAtActiveInput(text)) {
+    ElMessage.info('请先点一下答案输入框，再点符号')
+  }
+}
 const showDo = ref(false)
 const showResult = ref(false)
 const currentAssignment = ref(null)
