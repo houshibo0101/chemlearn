@@ -16,7 +16,7 @@
     ChemLearnWindows.exe --reset            重新部署（清空用户数据，恢复内置题库）
     ChemLearnWindows.exe --console          纯命令行模式（排障用，窗口里能看到日志）
 """
-VERSION = "2.1.1"
+VERSION = "2.1.13"
 APP_NAME = "化学学习系统"
 DATA_FOLDER = "ChemLearnWindows"
 PAYLOAD_NAME = "payload_chem.tar.gz"
@@ -66,6 +66,7 @@ BACKEND_DIR = os.path.join(DATA_ROOT, "backend")
 WEB_DIR = os.path.join(DATA_ROOT, "web", "dist", "app")
 DB_PATH = os.path.join(BACKEND_DIR, "chemlearn.db")
 ENV_PATH = os.path.join(BACKEND_DIR, ".env")
+SETTINGS_PATH = os.path.join(DATA_ROOT, "deployer-settings.json")
 MARKER = os.path.join(DATA_ROOT, ".deployed")
 LOG_PATH = os.path.join(DATA_ROOT, "deployer.log")
 PAYLOAD_PATH = resource_path(PAYLOAD_NAME)
@@ -133,6 +134,90 @@ def write_env_if_missing():
             "DEBUG=true\n"
             "SECRET_KEY=%s\n" % secret
         )
+
+
+def load_deployer_settings():
+    try:
+        with open(SETTINGS_PATH, encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def save_deployer_settings(data):
+    os.makedirs(DATA_ROOT, exist_ok=True)
+    with open(SETTINGS_PATH, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def _update_env_file(updates):
+    if not os.path.exists(ENV_PATH):
+        return
+    with open(ENV_PATH, encoding="utf-8") as f:
+        lines = f.read().splitlines()
+    keys = set(updates)
+    out, seen = [], set()
+    for line in lines:
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#") and "=" in stripped:
+            key = stripped.split("=", 1)[0].strip()
+            if key in keys:
+                value = updates.get(key, "")
+                if value:
+                    out.append("%s=%s" % (key, value))
+                    seen.add(key)
+                continue
+        out.append(line)
+    for key in keys:
+        value = updates.get(key, "")
+        if value and key not in seen:
+            out.append("%s=%s" % (key, value))
+    with open(ENV_PATH, "w", encoding="utf-8", newline="\n") as f:
+        f.write("\n".join(out).rstrip("\n") + "\n")
+
+
+def apply_saved_settings():
+    """把部署器里的可选设置写入环境与 .env；空值表示不启用。"""
+    settings = load_deployer_settings()
+    if not settings:
+        return
+
+    smtp_host = (settings.get("smtp_host") or "").strip()
+    smtp_port = (settings.get("smtp_port") or "465").strip()
+    smtp_user = (settings.get("smtp_user") or "").strip()
+    smtp_password = (settings.get("smtp_password") or "").strip()
+    smtp_from = (settings.get("smtp_from") or "").strip() or smtp_user
+    smtp_ready = bool(smtp_host and smtp_user and smtp_password)
+    try:
+        port_num = int(smtp_port)
+    except ValueError:
+        port_num = 465
+    use_ssl = port_num == 465
+
+    updates = {
+        "SMTP_HOST": smtp_host if smtp_ready else "",
+        "SMTP_PORT": str(port_num) if smtp_ready else "",
+        "SMTP_USER": smtp_user if smtp_ready else "",
+        "SMTP_PASSWORD": smtp_password if smtp_ready else "",
+        "SMTP_FROM": smtp_from if smtp_ready else "",
+        "SMTP_USE_SSL": "true" if use_ssl else "false",
+        "SMTP_USE_TLS": "false" if use_ssl else "true",
+        "REQUIRE_EMAIL_VERIFICATION": "true" if smtp_ready else "false",
+        "SMTP_DEBUG": "false",
+        "AI_API_BASE": (settings.get("ai_api_base") or "").strip(),
+        "AI_API_KEY": (settings.get("ai_api_key") or "").strip(),
+    }
+
+    upload_dir = (settings.get("upload_dir") or "").strip()
+    if upload_dir:
+        upload_dir = os.path.abspath(upload_dir)
+        os.makedirs(upload_dir, exist_ok=True)
+        os.environ["UPLOAD_DIR"] = upload_dir
+    else:
+        os.environ.pop("UPLOAD_DIR", None)
+
+    _update_env_file(updates)
 
 
 def force_clean(log, timeout=8.0):
@@ -236,6 +321,7 @@ def deploy(force=False, log=print, progress=None):
         raise DeployError("解压后没有找到 backend 目录，运行时包可能已损坏")
     os.makedirs(os.path.join(BACKEND_DIR, "uploads"), exist_ok=True)
     write_env_if_missing()
+    apply_saved_settings()
 
     # 旧版目录已无用（数据库在迁移时已接管），清掉避免重复占空间
     if migrated or os.path.isfile(LEGACY_MARKER):
@@ -374,6 +460,7 @@ class Backend:
             sys.path.insert(0, BACKEND_DIR)
         # 后端按相对路径找数据库 / 前端 / 上传目录，工作目录必须是 backend
         self._quiet_sqlalchemy()
+        apply_saved_settings()
 
         from app.main import app as fastapi_app  # noqa: E402
 
@@ -507,8 +594,8 @@ class DeployerApp:
         root = self.root
         root.title("%s · Windows 本地部署器  v%s" % (APP_NAME, VERSION))
         root.configure(bg=BG)
-        root.geometry("%dx%d" % (px(760), px(580)))
-        root.minsize(px(720), px(560))
+        root.geometry("%dx%d" % (px(840), px(600)))
+        root.minsize(px(780), px(560))
 
         try:
             root.iconbitmap(resource_path("app.ico"))
@@ -613,11 +700,12 @@ class DeployerApp:
         self.btn_quit = self._button(footer, "退出", self.on_close, primary=False)
         self.btn_stop = self._button(footer, "停止服务", self.stop_service, primary=False)
         self.btn_redeploy = self._button(footer, "重新部署…", self.redeploy, primary=False)
+        self.btn_settings = self._button(footer, "设置…", self.open_settings, primary=False)
         self.btn_data = self._button(footer, "数据目录", self.open_data_dir, primary=False)
         self.btn_open = self._button(footer, "打开系统", self.open_system, primary=True)
         self.btn_retry = self._button(footer, "重试启动", self.retry_start, primary=True)
         for btn in (self.btn_quit, self.btn_stop, self.btn_redeploy,
-                    self.btn_data, self.btn_open):
+                    self.btn_settings, self.btn_data, self.btn_open):
             btn.pack(side="right", padx=(px(8), 0))
         self.btn_open.configure(state="disabled")
         self.btn_stop.configure(state="disabled")
@@ -849,6 +937,107 @@ class DeployerApp:
 
     def open_system(self):
         self.open_url(self.local_var.get())
+
+    def open_settings(self):
+        """可选设置：SMTP、AI 接口、上传文件目录，全部可留空。"""
+        from tkinter import filedialog, messagebox
+        tk, px = self.tk, self.px
+        settings = load_deployer_settings()
+
+        win = tk.Toplevel(self.root)
+        win.title("可选设置")
+        win.configure(bg=BG)
+        win.transient(self.root)
+        win.grab_set()
+        win.geometry("%dx%d" % (px(640), px(500)))
+        win.minsize(px(580), px(460))
+
+        body = tk.Frame(win, bg=BG)
+        body.pack(fill="both", expand=True, padx=px(22), pady=(px(14), 0))
+        body.columnconfigure(1, weight=1)
+
+        def heading(text, row):
+            tk.Label(body, text=text, bg=BG, fg=ACCENT_DARK,
+                     font=("Microsoft YaHei UI", 10, "bold")).grid(
+                row=row, column=0, columnspan=2, sticky="w", pady=(px(10), px(6)))
+
+        def field(label, key, default="", show=None, row=0):
+            tk.Label(body, text=label, bg=BG, fg=TEXT,
+                     font=("Microsoft YaHei UI", 9)).grid(
+                row=row, column=0, sticky="w", padx=(0, px(10)), pady=px(4))
+            var = tk.StringVar(value=str(settings.get(key, default) or ""))
+            entry = tk.Entry(body, textvariable=var, show=show or "",
+                             font=("Consolas", 10), bd=1, relief="solid")
+            entry.grid(row=row, column=1, sticky="we", pady=px(4))
+            return var
+
+        heading("邮件 SMTP（可选，填完整后注册才要求邮箱验证码）", 0)
+        smtp_host = field("SMTP 主机", "smtp_host", "smtp.qq.com", row=1)
+        smtp_port = field("端口 / SSL", "smtp_port", "465", row=2)
+        smtp_user = field("SMTP 账号", "smtp_user", row=3)
+        smtp_password = field("SMTP 授权码", "smtp_password", show="*", row=4)
+        smtp_from = field("发件地址（空=账号）", "smtp_from", row=5)
+
+        heading("AI 问答（可选，留空则使用内置默认配置）", 6)
+        ai_base = field("API 地址", "ai_api_base", "https://api.openai.com/v1", row=7)
+        ai_key = field("API Key", "ai_api_key", show="*", row=8)
+
+        heading("上传文件目录（可选，空=数据目录下 backend\\uploads）", 9)
+        tk.Label(body, text="文件目录", bg=BG, fg=TEXT,
+                 font=("Microsoft YaHei UI", 9)).grid(
+            row=10, column=0, sticky="w", pady=px(4))
+        upload_box = tk.Frame(body, bg=BG)
+        upload_box.grid(row=10, column=1, sticky="we", pady=px(4))
+        upload_box.columnconfigure(0, weight=1)
+        upload_var = tk.StringVar(value=str(settings.get("upload_dir", "") or ""))
+        tk.Entry(upload_box, textvariable=upload_var, font=("Consolas", 9),
+                 bd=1, relief="solid").grid(row=0, column=0, sticky="we")
+
+        def browse_upload():
+            selected = filedialog.askdirectory(
+                parent=win, initialdir=upload_var.get() or DATA_ROOT)
+            if selected:
+                upload_var.set(selected)
+
+        tk.Button(upload_box, text="浏览…", command=browse_upload, bd=0,
+                  relief="flat", bg="#eef2ff", fg=ACCENT_DARK, cursor="hand2",
+                  padx=px(10), pady=px(2),
+                  font=("Microsoft YaHei UI", 9)).grid(row=0, column=1, padx=(px(8), 0))
+
+        tk.Label(body, text="以上均为可选项；修改后请重启部署器，重新启动服务后生效。",
+                 bg=BG, fg=MUTED, font=("Microsoft YaHei UI", 8)).grid(
+            row=11, column=0, columnspan=2, sticky="w", pady=(px(12), 0))
+
+        actions = tk.Frame(win, bg=BG)
+        actions.pack(fill="x", padx=px(22), pady=px(14))
+
+        def save():
+            data = {
+                "smtp_host": smtp_host.get().strip(),
+                "smtp_port": smtp_port.get().strip() or "465",
+                "smtp_user": smtp_user.get().strip(),
+                "smtp_password": smtp_password.get().strip(),
+                "smtp_from": smtp_from.get().strip(),
+                "ai_api_base": ai_base.get().strip(),
+                "ai_api_key": ai_key.get().strip(),
+                "upload_dir": upload_var.get().strip(),
+            }
+            save_deployer_settings(data)
+            try:
+                if os.path.isdir(BACKEND_DIR):
+                    apply_saved_settings()
+            except Exception as exc:
+                messagebox.showwarning("保存设置", "设置已保存，但写入配置失败：\n%s" % exc, parent=win)
+                return
+            win.destroy()
+            messagebox.showinfo(
+                "设置已保存",
+                "设置已保存。\n\nSMTP 填完整后，注册才会要求邮箱验证码；\n"
+                "修改 AI / 邮件 / 文件目录后，请重启部署器再启动服务。",
+                parent=self.root)
+
+        self._button(actions, "取消", win.destroy, primary=False).pack(side="right", padx=(px(8), 0))
+        self._button(actions, "保存", save, primary=True).pack(side="right")
 
     def open_data_dir(self):
         try:

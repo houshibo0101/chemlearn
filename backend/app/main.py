@@ -237,7 +237,8 @@ if os.path.isdir(_site_assets):
 
 _frontend_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "web", "dist", "app")
 _frontend_dir = os.path.normpath(_frontend_dir)
-_uploads_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads")
+_uploads_dir = os.environ.get("UPLOAD_DIR") or os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads")
 _uploads_dir = os.path.normpath(_uploads_dir)
 
 from starlette.exceptions import HTTPException as _StarletteHTTPException

@@ -1,4 +1,4 @@
-# 化学学习系统 · ChemLearn
+﻿# 化学学习系统 · ChemLearn
 
 [![CI](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml/badge.svg)](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml)
 
@@ -34,7 +34,7 @@
 | 文件 | 平台 | 说明 |
 |---|---|---|
 | [ChemLearn-Deployer-v1.3.0.exe](https://github.com/houshibo0101/chemlearn/releases/tag/v1.3.0) | Linux 服务器 | 填 IP、SSH 密码和 AI Key，自动装好 nginx / Python / systemd，3–6 分钟完成 |
-| [ChemLearnWindows-v2.1.12.exe](https://github.com/houshibo0101/chemlearn/releases/tag/windows-v2.1.12) | Windows 本机 | 双击部署到本机，界面里看地址 / 开系统 / 重置，局域网可访问 |
+| [ChemLearnWindows-v2.1.13.exe](https://github.com/houshibo0101/chemlearn/releases/tag/windows-v2.1.13) | Windows 本机 | 双击部署到本机，界面里看地址 / 开系统 / 重置，局域网可访问 |
 | [题库数据包 453 题](https://github.com/houshibo0101/chemlearn/releases/tag/question-bank-v1) | 通用 | 解压到 `backend/import_data/` 后跑导入脚本 |
 
 > Linux 部署器内置完整部署包（源码 + 前端 + 依赖清单），目标机只需能联网的 Ubuntu / Debian。
@@ -246,6 +246,7 @@ deployer/windows/.buildenv/Scripts/python deployer/windows/build_win.py --with-p
 
 - 首次运行把运行时解压到 `%LOCALAPPDATA%\ChemLearnWindows`，数据库存在 `backend\chemlearn.db`
 - 窗口里可以直接：打开系统、复制局域网地址、打开数据目录、停止服务、重新部署
+- 「设置…」里可选填：邮件 SMTP（注册验证码）、AI API 地址/Key、上传文件目录；全部可留空
 - 换新 exe 直接双击即可升级，程序会更新而数据库保留；`--reset` 才清空数据
 - 内置 4 套化学连连看示例关卡，装好即可直接玩
 - 默认账号 `admin / admin123`，登录后请到个人中心修改

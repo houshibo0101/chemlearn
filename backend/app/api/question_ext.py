@@ -21,10 +21,11 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/questions", tags=["题目扩展"])
 
-# 与 main.py 保持一致：默认 backend/uploads/questions，可用 UPLOAD_DIR 环境变量覆盖。
-# 不要写死 /var/www/... 之类的服务器路径，否则换台机器（或 CI）一导入就 PermissionError。
+# 上传根目录：默认 backend/uploads；本地部署器可通过 UPLOAD_DIR 指向自定义目录。
+# 题目图片统一放在其下的 questions/ 子目录。
 _BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-UPLOAD_DIR = os.environ.get("UPLOAD_DIR") or os.path.join(_BACKEND_DIR, "uploads", "questions")
+_UPLOAD_ROOT = os.environ.get("UPLOAD_DIR") or os.path.join(_BACKEND_DIR, "uploads")
+UPLOAD_DIR = os.path.join(_UPLOAD_ROOT, "questions")
 try:
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 except OSError as exc:  # 目录不可写时不要让整个应用起不来
