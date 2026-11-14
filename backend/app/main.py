@@ -2,6 +2,7 @@
 化学学习助手 - FastAPI 主入口
 """
 from contextlib import asynccontextmanager
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
@@ -158,8 +159,13 @@ app.include_router(matching_router, prefix=prefix)
 app.include_router(rankings_router, prefix=prefix)
 
 
-@app.get("/", tags=["根"])
+@app.get("/", include_in_schema=False)
 async def root():
+    # 有官网静态页时返回官网；没有时保留原来的 API 信息，方便排查
+    site_index = os.path.join(os.path.dirname(os.path.abspath(__file__)), "site", "index.html")
+    if os.path.exists(site_index):
+        from fastapi.responses import FileResponse
+        return FileResponse(site_index)
     return {
         "name": settings.APP_NAME,
         "version": "1.0.0",
@@ -215,9 +221,19 @@ async def health():
     }
 
 
-# ========== 静态文件挂载（前端页面 + 上传文件） ==========
+# ========== 静态文件挂载（官网 + 前端页面 + 上传文件） ==========
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, RedirectResponse
 import os
+
+_site_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "site")
+_site_index = os.path.join(_site_dir, "index.html")
+_site_assets = os.path.join(_site_dir, "assets")
+
+if os.path.isdir(_site_assets):
+    app.mount("/assets", StaticFiles(directory=_site_assets), name="site-assets")
+    print(f"[静态文件] 官网资源已挂载: {_site_assets}")
+
 
 _frontend_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "web", "dist", "app")
 _frontend_dir = os.path.normpath(_frontend_dir)

@@ -1,0 +1,214 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>化学学习系统 · ChemLearn</title>
+  <meta name="description" content="面向高中化学的在线学习系统：题库刷题、错题本、AI 讲解、化学连连看、作业考试、结构式编辑器，支持平板与 Windows 本地部署。" />
+  <meta name="theme-color" content="#070b18" />
+  <link rel="icon" href="./assets/home.png" />
+  <link rel="stylesheet" href="./assets/styles.css" />
+</head>
+<body>
+  <header class="site-header" id="top">
+    <div class="wrap header-inner">
+      <a class="brand" href="#top" aria-label="化学学习系统首页">
+        <span class="brand-mark">⚗️</span>
+        <span class="brand-text">化学学习系统<small>CHEMLEARN</small></span>
+      </a>
+      <button class="nav-toggle" id="navToggle" aria-label="展开导航" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="nav" id="nav">
+        <a href="#features">功能</a>
+        <a href="#screens">界面</a>
+        <a href="#deploy">使用方式</a>
+        <a class="nav-cta" href="app/">进入系统</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-glow hero-glow-a"></div>
+      <div class="hero-glow hero-glow-b"></div>
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <span class="eyebrow">高中化学 · 在线学习 · 平板可用</span>
+          <h1>把化学学习<br /><span class="gradient-text">装进一个系统</span></h1>
+          <p class="lead">
+            题库刷题、错题本、AI 讲解、化学连连看、作业与考试、结构式编辑器……
+            一个地址就能完成教与学，也可以在 Windows 上本地部署。
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="app/">进入系统 <span>→</span></a>
+            <a class="btn btn-ghost" href="https://github.com/houshibo0101/chemlearn/releases/latest" target="_blank" rel="noopener">
+              下载 Windows 版
+            </a>
+          </div>
+          <ul class="hero-points">
+            <li>免安装，浏览器直接使用</li>
+            <li>手机 / 平板 / 电脑自适应</li>
+            <li>数据保存在自己的服务器</li>
+          </ul>
+        </div>
+
+        <div class="hero-visual">
+          <div class="browser-card">
+            <div class="browser-bar">
+              <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+              <span class="browser-url">192.168.9.108:901app/</span>
+            </div>
+            <img src="./assets/home.png" alt="化学学习系统学习看板界面" />
+          </div>
+          <div class="float-card">
+            <span class="float-icon">🧪</span>
+            <div>
+              <strong>化学连连看</strong>
+              <small>物质 · 官能团 · 方程式 · 俗称</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="features">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <span class="eyebrow">功能</span>
+          <h2>从刷题到讲评，一套够用</h2>
+          <p>围绕高中化学的日常教学流程设计，老师和学生用同一个系统。</p>
+        </div>
+        <div class="feature-grid">
+          <article class="feature-card reveal">
+            <div class="feature-icon">📚</div>
+            <h3>题库刷题</h3>
+            <p>按章节、题型、难度筛选，顺序练习或随机组卷；化学式自动排版，支持 LaTeX 与手写草纸。</p>
+          </article>
+          <article class="feature-card reveal">
+            <div class="feature-icon">📝</div>
+            <h3>错题本 + AI 讲解</h3>
+            <p>答错自动收录，生成 AI 解析和变式题；支持追问，讲清楚每一步。</p>
+          </article>
+          <article class="feature-card reveal">
+            <div class="feature-icon">🧩</div>
+            <h3>化学连连看</h3>
+            <p>物质与俗名、官能团与性质、方程式与现象、名称与化学式，四类配对关卡，计时计分。</p>
+          </article>
+          <article class="feature-card reveal">
+            <div class="feature-icon">🎓</div>
+            <h3>作业与考试</h3>
+            <p>老师按班级布置，学生在线作答；自动判分、成绩排名、分数段统计，支持导出 CSV。</p>
+          </article>
+          <article class="feature-card reveal">
+            <div class="feature-icon">🧬</div>
+            <h3>结构式编辑器</h3>
+            <p>内置 Ketcher，画双键、官能团、环和立体键；支持 KingDraw 的 .kdx / .cdx / .mol 导入。</p>
+          </article>
+          <article class="feature-card reveal">
+            <div class="feature-icon">📊</div>
+            <h3>学习报告</h3>
+            <p>练习量、正确率、知识点掌握情况、班级统计，一眼看出薄弱环节。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="screens">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <span class="eyebrow">界面</span>
+          <h2>干净、直接、为课堂准备</h2>
+          <p>深色模式、平板操作、化学式自动排版，细节都按日常使用打磨。</p>
+        </div>
+        <div class="shot-grid">
+          <figure class="shot shot-wide reveal">
+            <img src="./assets/home.png" alt="学习看板" loading="lazy" />
+            <figcaption><strong>学习看板</strong>练习、错题、AI 用量和最近动态</figcaption>
+          </figure>
+          <figure class="shot reveal">
+            <img src="./assets/matching.png" alt="化学连连看配对界面" loading="lazy" />
+            <figcaption><strong>化学连连看</strong>配对成功即显示知识点解析</figcaption>
+          </figure>
+          <figure class="shot reveal">
+            <img src="./assets/matching-list.png" alt="化学连连看关卡列表" loading="lazy" />
+            <figcaption><strong>关卡列表</strong>四类玩法，按用时与失误计分</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="deploy">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <span class="eyebrow">使用方式</span>
+          <h2>在线用，或装在自己的电脑上</h2>
+          <p>同一套系统，两种部署方式；数据都在自己手里。</p>
+        </div>
+        <div class="deploy-grid">
+          <article class="deploy-card reveal">
+            <span class="deploy-num">01</span>
+            <h3>浏览器直接使用</h3>
+            <p>打开地址就能登录，适合机房、教室和平板。学生无需安装任何软件。</p>
+            <a class="text-link" href="app/">进入系统 →</a>
+          </article>
+          <article class="deploy-card reveal">
+            <span class="deploy-num">02</span>
+            <h3>Windows 本地部署</h3>
+            <p>下载单文件 exe，双击即可在本机运行，局域网内其它设备也能访问。</p>
+            <a class="text-link" href="https://github.com/houshibo0101/chemlearn/releases/latest" target="_blank" rel="noopener">下载安装包 →</a>
+          </article>
+          <article class="deploy-card reveal">
+            <span class="deploy-num">03</span>
+            <h3>自己的服务器</h3>
+            <p>FastAPI + SQLite + nginx，一条命令部署；数据库和上传文件都保存在本地。</p>
+            <a class="text-link" href="https://github.com/houshibo0101/chemlearn" target="_blank" rel="noopener">查看源码 →</a>
+          </article>
+        </div>
+        <div class="deploy-preview reveal">
+          <img src="./assets/deployer.png" alt="Windows 本地部署器界面" loading="lazy" />
+          <div>
+            <h3>双击就能部署</h3>
+            <p>Windows 部署器自带前端、后端和示例题库，自动选择端口、打开浏览器，并在窗口里管理启停、地址和数据目录。</p>
+            <ul class="check-list">
+              <li>单文件 exe，无需安装 Python</li>
+              <li>升级保留数据库，支持一键重置</li>
+              <li>局域网其它设备可直接访问</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-band">
+      <div class="wrap cta-inner reveal">
+        <div>
+          <h2>现在就开始一节化学课</h2>
+          <p>已经有账号？直接进入系统。没有账号？联系老师开通。</p>
+        </div>
+        <a class="btn btn-primary" href="app/">进入系统 <span>→</span></a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <div class="footer-brand">
+        <span class="brand-mark">⚗️</span>
+        <div>
+          <strong>化学学习系统</strong>
+          <small>ChemLearn · 高中化学在线学习</small>
+        </div>
+      </div>
+      <div class="footer-links">
+        <a href="app/">进入系统</a>
+        <a href="https://github.com/houshibo0101/chemlearn" target="_blank" rel="noopener">GitHub</a>
+        <a href="#top">回到顶部</a>
+      </div>
+      <p class="copyright">© <span id="year"></span> ChemLearn · 仅供教学使用</p>
+    </div>
+  </footer>
+
+  <script src="./assets/main.js"></script>
+</body>
+</html>
