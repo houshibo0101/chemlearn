@@ -191,6 +191,7 @@ img { max-width: 100%; display: block; }
 .deploy-card p { margin: 0 0 14px; color: var(--muted); font-size: 13.5px; }
 .text-link { color: #a5b4fc; font-size: 13px; font-weight: 600; }
 .text-link:hover { color: #67e8f9; }
+.text-muted { color: var(--dim); font-size: 12.5px; }
 .deploy-preview {
   display: grid; grid-template-columns: 0.95fr 1.05fr; gap: 34px; align-items: center;
   padding: 26px; border-radius: 22px;
