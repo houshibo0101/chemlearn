@@ -87,6 +87,14 @@
             :icon="VideoPlay"
             @click="startPaper(p)"
           >开始做题</el-button>
+          <el-button
+            v-if="p.ready && p.doing"
+            size="small"
+            type="warning"
+            plain
+            :loading="restartingId === p.id"
+            @click="restartPaper(p)"
+          >重新计时</el-button>
 
           <el-button
             v-else-if="p.status === 'pending'"
@@ -436,6 +444,7 @@ const cropRow = ref(null)
 const questionEditVisible = ref(false)
 const editingQuestion = ref(null)
 const syncingId = ref(null)
+const restartingId = ref(null)
 
 const syncQuestions = async (p) => {
   syncingId.value = p.id
@@ -446,6 +455,27 @@ const syncQuestions = async (p) => {
     // 错误由拦截器提示
   } finally {
     syncingId.value = null
+  }
+}
+
+const restartPaper = async (p) => {
+  try {
+    await ElMessageBox.confirm(
+      '当前未交卷的作答记录会作废，重新从 0 开始计时。确定重新开始吗？',
+      '重新计时',
+      { type: 'warning', confirmButtonText: '重新开始', cancelButtonText: '取消' },
+    )
+    restartingId.value = p.id
+    await api.post(`/papers/${p.id}/restart`)
+    p.doing = false
+    ElMessage.success('已重置计时，正在打开新作答页')
+    window.location.href = `/chem/api/v1/papers/${p.id}/page`
+  } catch (e) {
+    if (e !== 'cancel') {
+      // 错误由拦截器提示
+    }
+  } finally {
+    restartingId.value = null
   }
 }
 

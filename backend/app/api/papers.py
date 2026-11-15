@@ -108,6 +108,13 @@ async def list_papers(
 
     rows = (await db.execute(q.order_by(desc(Paper.created_at)).limit(200))).scalars().all()
 
+    doing_ids = set((await db.execute(
+        select(PaperAttempt.paper_id).where(
+            PaperAttempt.user_id == current_user.id,
+            PaperAttempt.status == "doing",
+        )
+    )).scalars().all())
+
     # 我的作答记录（用于列表上显示"已做 82 分"）
     my_best = {}
     try:
@@ -123,6 +130,7 @@ async def list_papers(
     out = []
     for p in rows:
         d = _brief(p, for_admin=admin_view)
+        d["doing"] = p.id in doing_ids
         if p.id in my_best:
             d["my_best_score"] = my_best[p.id]
         out.append(d)
@@ -594,6 +602,7 @@ async def start_paper(
     )).scalars().first()
 
     now = datetime.now(timezone.utc)
+    resumed = row is not None
     if not row:
         row = PaperAttempt(
             paper_id=paper_id,
@@ -614,11 +623,35 @@ async def start_paper(
 
     return {
         "attempt_id": row.id,
+        "resumed": resumed,
+        "started_at": row.started_at.isoformat() if row.started_at else None,
         "duration_sec": total,
         "remain_sec": max(0, int(total - elapsed)),
         "elapsed_sec": int(elapsed),
         "switch_count": row.switch_count or 0,
     }
+
+
+@router.post("/{paper_id}/restart", summary="放弃当前作答并重新计时")
+async def restart_paper(
+    paper_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    paper = await db.get(Paper, paper_id)
+    if not paper:
+        raise HTTPException(status_code=404, detail="试卷不存在")
+    rows = (await db.execute(
+        select(PaperAttempt).where(
+            PaperAttempt.paper_id == paper_id,
+            PaperAttempt.user_id == current_user.id,
+            PaperAttempt.status == "doing",
+        )
+    )).scalars().all()
+    for row in rows:
+        row.status = "abandoned"
+    await db.commit()
+    return {"ok": True, "abandoned": len(rows), "message": "已重置，下次进入从 0 计时"}
 
 
 @router.post("/{paper_id}/view", summary="访问计数")
