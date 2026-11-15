@@ -320,12 +320,30 @@ const removeItem = async (id) => {
 }
 
 const exportPDF = async () => {
+  // 先在用户点击的同步阶段打开窗口，异步拉取数据后浏览器才不会拦截
+  const printWindow = window.open('', '_blank')
+  if (!printWindow) {
+    ElMessage.warning('浏览器拦截了新窗口，请允许本站弹出窗口后重试')
+    return
+  }
   try {
     ElMessage.info('正在生成PDF...')
-    // 获取全部错题
-    const res = await api.get('/wrong-questions', { params: { page: 1, page_size: 500 } })
-    const items = res.items || []
+    // 后端单页上限 100，按页取完全部错题
+    const items = []
+    let page = 1
+    let total = 0
+    while (true) {
+      const res = await api.get('/wrong-questions', {
+        params: { page, page_size: 100 },
+      })
+      const batch = res.items || []
+      total = res.total || 0
+      items.push(...batch)
+      if (batch.length === 0 || items.length >= total) break
+      page++
+    }
     if (items.length === 0) {
+      printWindow.close()
       ElMessage.warning('没有错题可导出')
       return
     }
@@ -363,7 +381,6 @@ const exportPDF = async () => {
 
     html += `</body></html>`
 
-    const printWindow = window.open('', '_blank')
     printWindow.document.write(html)
     printWindow.document.close()
     printWindow.onload = () => {
@@ -373,6 +390,7 @@ const exportPDF = async () => {
     }
     ElMessage.success('PDF已生成，请在打印窗口中选择"另存为PDF"')
   } catch (e) {
+    try { printWindow.close() } catch {}
     ElMessage.error('导出失败')
   }
 }
