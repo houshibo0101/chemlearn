@@ -8,6 +8,7 @@
   3. 学生点开套卷 → /page 返回做题页 → 交卷 POST /submit → 判分 + 错题入错题本
 """
 import os
+import re
 import uuid
 from datetime import datetime, timezone
 
@@ -35,6 +36,11 @@ def _is_admin(user: User) -> bool:
 
 def _is_teacher(user: User) -> bool:
     return (user.role or "").lower() in ("admin", "teacher")
+
+
+def _can_review(paper: Paper, user: User) -> bool:
+    """管理员可校对全部；老师只能校对（上传的）自己的卷。"""
+    return _is_admin(user) or (paper.uploader_id == user.id and _is_teacher(user))
 
 
 def _brief(p: Paper, for_admin: bool = False) -> dict:
@@ -277,10 +283,9 @@ async def page_image(paper_id: int, page_no: int):
     return FileResponse(path, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
 
-@router.get("/{paper_id}/figimg/{filename}", summary="自动切割的题目配图")
+@router.get("/{paper_id}/figimg/{filename}", summary="自动切割/手动截图的题目配图")
 async def figure_image(paper_id: int, filename: str):
-    if not (filename.startswith("q") and filename.endswith(".png")
-            and filename[1:-4].isdigit()):
+    if not re.fullmatch(r"[A-Za-z0-9_-]+\.png", filename):
         raise HTTPException(status_code=404, detail="配图不存在")
     path = paper_service.figure_image_path(paper_id, filename)
     if not os.path.isfile(path):
@@ -294,15 +299,16 @@ async def paper_questions(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """管理员校对标准答案用：返回每题的题干、选项、答案、解析"""
+    """管理员/上传老师校对标准答案用：返回每题的题干、选项、答案、解析"""
     paper = await db.get(Paper, paper_id)
     if not paper:
         raise HTTPException(status_code=404, detail="试卷不存在")
-    if not _is_admin(current_user) and paper.uploader_id != current_user.id:
+    if not _can_review(paper, current_user):
         raise HTTPException(status_code=403, detail="没有权限查看")
 
     return {
         "id": paper.id,
+        "page_count": paper_service.page_count(paper.id),
         "title": paper.title,
         "total_score": paper.total_score,
         "items": [{
@@ -315,11 +321,12 @@ async def paper_questions(
             "score": q.get("score") or 0,
             "page": q.get("page"),
             "has_figure": q.get("has_figure"),
+            "figures": q.get("figures") or [],
         } for q in (paper.questions_json or [])],
     }
 
 
-@router.patch("/{paper_id}/questions/{no}", summary="【管理员】修改单题答案/解析")
+@router.patch("/{paper_id}/questions/{no}", summary="管理员/上传老师修改单题答案/解析")
 async def update_question(
     paper_id: int,
     no: int,
@@ -328,11 +335,11 @@ async def update_question(
     db: AsyncSession = Depends(get_db),
 ):
     """修正 AI 提取错误的标准答案——判分准确性的根本在这里"""
-    if not _is_admin(current_user):
-        raise HTTPException(status_code=403, detail="只有管理员能校对")
     paper = await db.get(Paper, paper_id)
     if not paper:
         raise HTTPException(status_code=404, detail="试卷不存在")
+    if not _can_review(paper, current_user):
+        raise HTTPException(status_code=403, detail="只有管理员或上传老师能校对")
 
     questions = list(paper.questions_json or [])
     target = next((q for q in questions if int(q.get("no") or 0) == no), None)
@@ -368,6 +375,64 @@ async def update_question(
     )
     await db.commit()
     return {"ok": True, "answer": target.get("answer")}
+
+
+@router.post("/{paper_id}/questions/{no}/crop", summary="管理员/上传老师手动截图配图")
+async def crop_question_figure(
+    paper_id: int,
+    no: int,
+    payload: dict,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    paper = await db.get(Paper, paper_id)
+    if not paper:
+        raise HTTPException(status_code=404, detail="试卷不存在")
+    if not _can_review(paper, current_user):
+        raise HTTPException(status_code=403, detail="只有管理员或上传老师能截图")
+    if not (paper.source_filename or "").lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="只有 PDF 试卷支持手动截图")
+
+    questions = list(paper.questions_json or [])
+    target = next((q for q in questions if int(q.get("no") or 0) == no), None)
+    if not target:
+        raise HTTPException(status_code=404, detail="没有这道题")
+
+    try:
+        page_no = int(payload.get("page") or target.get("page") or 1)
+        x = max(0.0, min(1.0, float(payload.get("x", 0))))
+        y = max(0.0, min(1.0, float(payload.get("y", 0))))
+        w = max(0.0, min(1.0 - x, float(payload.get("w", 0))))
+        h = max(0.0, min(1.0 - y, float(payload.get("h", 0))))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="截图坐标不合法")
+    if w < 0.01 or h < 0.01:
+        raise HTTPException(status_code=400, detail="请拖出一个更大的截图区域")
+    if page_no < 1 or page_no > paper_service.page_count(paper.id):
+        raise HTTPException(status_code=400, detail="页码超出范围")
+
+    source = os.path.join(paper_service.UPLOAD_ROOT, paper.source_path or "")
+    if not os.path.isfile(source):
+        raise HTTPException(status_code=404, detail="原始 PDF 不存在")
+    with open(source, "rb") as f:
+        content = f.read()
+
+    filename = f"manual_q{no}_{uuid.uuid4().hex[:8]}.png"
+    try:
+        paper_service.crop_pdf_region(content, paper.id, page_no, x, y, w, h, filename)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"截图失败：{exc}")
+
+    # 手动截图替换本题原有配图，避免自动图 + 手动图重复
+    target["figures"] = [filename]
+    paper.questions_json = questions
+    from sqlalchemy.orm.attributes import flag_modified
+    flag_modified(paper, "questions_json")
+    paper.html_path = paper_service.write_html(
+        paper.id, paper_service.render_html(paper, questions)
+    )
+    await db.commit()
+    return {"ok": True, "figures": [filename]}
 
 
 @router.post("/{paper_id}/start", summary="开始答题（服务端计时，防刷新重置）")

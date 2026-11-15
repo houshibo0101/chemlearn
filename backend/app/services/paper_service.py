@@ -82,6 +82,43 @@ def figure_image_path(paper_id: int, filename: str) -> str:
     return os.path.join(FIGURE_ROOT, str(paper_id), filename)
 
 
+def page_count(paper_id: int) -> int:
+    """已渲染的 PDF 页数（用于校对页翻页与截图）。"""
+    d = os.path.join(PAPER_ROOT, "pages", str(paper_id))
+    if not os.path.isdir(d):
+        return 0
+    return len([n for n in os.listdir(d) if re.fullmatch(r"p\d+\.png", n)])
+
+
+def crop_pdf_region(content: bytes, paper_id: int, page_no: int,
+                    x: float, y: float, w: float, h: float, filename: str) -> str:
+    """按归一化坐标从 PDF 原页裁一块高清图，保存到 figures/。"""
+    import pymupdf
+
+    doc = pymupdf.open(stream=content, filetype="pdf")
+    if page_no < 1 or page_no > doc.page_count:
+        raise ValueError("页码超出范围")
+    page = doc[page_no - 1]
+    pw, ph = page.rect.width, page.rect.height
+    left = max(0.0, min(1.0, x)) * pw
+    top = max(0.0, min(1.0, y)) * ph
+    right = max(0.0, min(1.0, x + w)) * pw
+    bottom = max(0.0, min(1.0, y + h)) * ph
+    # 留一点边，避免把图框/文字边缘切掉
+    pad = 3
+    clip = pymupdf.Rect(
+        max(0, left - pad), max(0, top - pad),
+        min(pw, right + pad), min(ph, bottom + pad),
+    )
+    if clip.width < 4 or clip.height < 4:
+        raise ValueError("截图区域太小")
+    out = figure_image_path(paper_id, filename)
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    pix = page.get_pixmap(clip=clip, dpi=200)
+    pix.save(out)
+    return filename
+
+
 def _text_question_anchors(page) -> dict:
     """从文字层找题号行，返回 {题号: 顶部 y（pt）}。"""
     anchors = {}

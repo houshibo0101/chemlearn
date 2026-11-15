@@ -5,6 +5,8 @@ import os
 import pymupdf
 import pytest
 
+from app.api.papers import _can_review
+from app.models import Paper, User, UserRole
 from app.services import paper_service as ps
 
 
@@ -33,3 +35,30 @@ def test_crop_question_images_text_pdf(tmp_path, monkeypatch):
     assert os.path.isfile(ps.figure_image_path(pid, "q1.png"))
     assert os.path.isfile(ps.figure_image_path(pid, "q3.png"))
     assert not os.path.exists(ps.figure_image_path(pid, "q2.png"))
+
+
+def test_crop_pdf_region_normalized(tmp_path, monkeypatch):
+    monkeypatch.setattr(ps, "PAPER_ROOT", str(tmp_path / "papers"))
+    monkeypatch.setattr(ps, "FIGURE_ROOT", str(tmp_path / "papers" / "figures"))
+    doc = pymupdf.open()
+    doc.new_page(width=595, height=842)
+    pdf = doc.tobytes()
+
+    name = ps.crop_pdf_region(pdf, 7, 1, 0.1, 0.1, 0.4, 0.3, "manual_q1_test.png")
+    assert name == "manual_q1_test.png"
+    path = ps.figure_image_path(7, name)
+    assert os.path.isfile(path)
+    pix = pymupdf.Pixmap(path)
+    assert pix.width > 100 and pix.height > 100
+    assert ps.page_count(7) == 0
+
+
+def test_review_permissions():
+    owner = User(id=10, role=UserRole.TEACHER)
+    other = User(id=11, role=UserRole.TEACHER)
+    admin = User(id=12, role=UserRole.ADMIN)
+    paper = Paper(id=1, uploader_id=10)
+    assert _can_review(paper, owner) is True
+    assert _can_review(paper, other) is False
+    assert _can_review(paper, admin) is True
+

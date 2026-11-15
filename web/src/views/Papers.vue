@@ -98,13 +98,15 @@
             loading
           >生成中</el-button>
 
+          <!-- 校对：管理员可校对全部，老师只能校对上传的卷 -->
+          <el-button
+            v-if="p.ready && (isAdmin || (isTeacher && p.uploader_id === userStore.user?.id))"
+            size="small"
+            @click="openReview(p)"
+          >校对答案</el-button>
+
           <!-- 管理员操作 -->
           <template v-if="isAdmin">
-            <el-button
-              v-if="p.ready"
-              size="small"
-              @click="openReview(p)"
-            >校对答案</el-button>
             <el-button
               v-if="p.status === 'pending'"
               type="primary"
@@ -138,7 +140,7 @@
     </div>
 
     <!-- 校对标准答案 -->
-    <el-dialog v-model="reviewVisible" :title="`校对标准答案 · ${reviewTitle}`" width="920px" top="6vh">
+    <el-dialog v-model="reviewVisible" :title="`校对标准答案 · ${reviewTitle}`" width="min(1120px, 96vw)" top="6vh">
       <div class="review-tip">
         AI 识别出的答案可能有误。这里改完立即生效：判分用它，做题页也会同步重新生成。
         选择题填字母（多选如 <b>AB</b>），填空/计算题填参考答案要点。
@@ -149,6 +151,21 @@
           <template #default="{ row }">{{ typeText(row.type) }}</template>
         </el-table-column>
         <el-table-column prop="title" label="题干" min-width="200" show-overflow-tooltip />
+        <el-table-column label="配图" width="150" align="center">
+          <template #default="{ row }">
+            <div class="review-fig">
+              <img
+                v-if="row.figures && row.figures.length"
+                :src="figureUrl(row.figures[0])"
+                class="review-fig__thumb"
+                alt="题目配图"
+              />
+              <el-button size="small" link type="primary" @click="openCrop(row)">
+                {{ row.figures && row.figures.length ? '重新截图' : '从 PDF 截图' }}
+              </el-button>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column label="标准答案" min-width="230">
           <template #default="{ row }">
             <el-input
@@ -179,6 +196,15 @@
         <el-button type="primary" @click="reviewVisible = false">完成</el-button>
       </template>
     </el-dialog>
+
+    <PdfCropDialog
+      v-model="cropVisible"
+      :paper-id="reviewPaperId"
+      :question-no="cropRow?.no"
+      :initial-page="cropRow?.page || 1"
+      :page-count="reviewPageCount"
+      @saved="onCropSaved"
+    />
 
     <!-- 上传对话框 -->
     <el-dialog v-model="uploadVisible" title="上传试卷" width="520px" :close-on-click-modal="false">
@@ -254,6 +280,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Upload, UploadFilled, VideoPlay } from '@element-plus/icons-vue'
 import api from '@/api'
 import { useUserStore } from '@/stores/user'
+import PdfCropDialog from '@/components/PdfCropDialog.vue'
 
 const userStore = useUserStore()
 const isAdmin = computed(() => (userStore.user?.role || '').toLowerCase() === 'admin')
@@ -366,19 +393,23 @@ const reviewVisible = ref(false)
 const reviewLoading = ref(false)
 const reviewTitle = ref('')
 const reviewItems = ref([])
-let reviewPaperId = null
+const reviewPaperId = ref(null)
+const reviewPageCount = ref(1)
+const cropVisible = ref(false)
+const cropRow = ref(null)
 
 const typeText = (t) =>
   ({ single: '单选', multiple: '多选', fill: '填空', calculation: '计算', subjective: '简答' }[t] || t)
 
 const openReview = async (p) => {
-  reviewPaperId = p.id
+  reviewPaperId.value = p.id
   reviewTitle.value = p.title
   reviewVisible.value = true
   reviewLoading.value = true
   try {
     const res = await api.get(`/papers/${p.id}/questions`)
     reviewItems.value = res.items || []
+    reviewPageCount.value = res.page_count || 1
   } catch (e) {
     reviewVisible.value = false
   } finally {
@@ -386,9 +417,25 @@ const openReview = async (p) => {
   }
 }
 
+const figureUrl = (name) =>
+  `/chem/api/v1/papers/${reviewPaperId.value}/figimg/${encodeURIComponent(name)}`
+
+const openCrop = (row) => {
+  if (reviewPageCount.value < 1) {
+    ElMessage.warning('这套卷没有 PDF 页面图，无法截图')
+    return
+  }
+  cropRow.value = row
+  cropVisible.value = true
+}
+
+const onCropSaved = (figures) => {
+  if (cropRow.value) cropRow.value.figures = figures || []
+}
+
 const saveItem = async (row) => {
   try {
-    await api.patch(`/papers/${reviewPaperId}/questions/${row.no}`, {
+    await api.patch(`/papers/${reviewPaperId.value}/questions/${row.no}`, {
       answer: row.answer,
       analysis: row.analysis,
     })
@@ -547,6 +594,15 @@ onUnmounted(() => timer && clearInterval(timer))
   line-height: 1.7;
 }
 .review-foot { float: left; font-size: 12.5px; color: var(--text-placeholder); line-height: 32px; }
+.review-fig { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.review-fig__thumb {
+  max-width: 128px;
+  max-height: 58px;
+  object-fit: contain;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+}
 
 @media (max-width: 768px) {
   .paper-card { flex-direction: column; align-items: stretch; }
