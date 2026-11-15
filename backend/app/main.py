@@ -14,7 +14,8 @@ from app.api import (
     auth_router, questions_router, wrong_questions_router,
     ai_router, api_keys_router, open_platform_router, admin_users_router,
     classes_router, assignments_router, exams_router, teacher_router,
-    offline_router, stats_router, admin_dashboard_router, question_import_router,
+    offline_router, stats_router, admin_dashboard_router, admin_scores_router,
+    question_import_router,
     open_platform_v2_router, knowledge_graph_router, question_ext_router,
     practice_records_router, notifications_router, papers_router, favorites_router, ai_tasks_router,
     matching_router,
@@ -146,6 +147,7 @@ app.include_router(teacher_router, prefix=prefix)
 app.include_router(offline_router, prefix=prefix)
 app.include_router(stats_router, prefix=prefix)
 app.include_router(admin_dashboard_router, prefix=prefix)
+app.include_router(admin_scores_router, prefix=prefix)
 app.include_router(question_import_router, prefix=prefix)
 app.include_router(open_platform_v2_router, prefix=prefix)
 app.include_router(knowledge_graph_router, prefix=prefix)

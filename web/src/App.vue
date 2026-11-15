@@ -50,6 +50,7 @@
           <el-menu-item index="/teacher/classes"><el-icon><School /></el-icon><span>班级管理</span></el-menu-item>
           <el-menu-item index="/admin/questions"><el-icon><Setting /></el-icon><span>题库管理</span></el-menu-item>
           <el-menu-item v-if="adminPortal" index="/admin/dashboard"><el-icon><DataLine /></el-icon><span>数据看板</span></el-menu-item>
+          <el-menu-item v-if="adminPortal" index="/admin/scores"><el-icon><Histogram /></el-icon><span>成绩管理</span></el-menu-item>
           <el-menu-item v-if="adminPortal" index="/admin/users"><el-icon><UserFilled /></el-icon><span>账号管理</span></el-menu-item>
           <el-menu-item index="/report"><el-icon><DataLine /></el-icon><span>学习报告</span></el-menu-item>
         </template>
@@ -176,7 +177,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessageBox } from 'element-plus'
-import { DataLine, Moon, Sunny, Bell } from '@element-plus/icons-vue'
+import { DataLine, Histogram, Moon, Sunny, Bell } from '@element-plus/icons-vue'
 import { getTheme, toggleTheme as doToggleTheme } from '@/utils/theme'
 import api from '@/api'
 import BugReportDialog from '@/components/BugReportDialog.vue'

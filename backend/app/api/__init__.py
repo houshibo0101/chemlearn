@@ -12,6 +12,7 @@ from app.api.teacher import router as teacher_router
 from app.api.offline import router as offline_router
 from app.api.stats import router as stats_router
 from app.api.admin_dashboard import router as admin_dashboard_router
+from app.api.admin_scores import router as admin_scores_router
 from app.api.question_import import router as question_import_router
 from app.api.open_platform_v2 import router as open_platform_v2_router
 from app.api.knowledge_graph import router as knowledge_graph_router
@@ -29,7 +30,7 @@ __all__ = [
     "ai_router", "api_keys_router", "open_platform_router",
     "admin_users_router", "classes_router", "assignments_router",
     "exams_router", "teacher_router", "offline_router", "stats_router",
-    "admin_dashboard_router", "question_import_router", "open_platform_v2_router",
+    "admin_dashboard_router", "admin_scores_router", "question_import_router", "open_platform_v2_router",
     "knowledge_graph_router",
     "question_ext_router", "practice_records_router", "notifications_router",
     "papers_router", "favorites_router", "ai_tasks_router", "matching_router",

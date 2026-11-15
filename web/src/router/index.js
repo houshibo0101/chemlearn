@@ -22,6 +22,7 @@ const routes = [
   { path: '/admin/questions', name: 'AdminQuestions', component: () => import('@/views/admin/QuestionManage.vue'), meta: { teacher: true } },
   { path: '/admin/users', name: 'AdminUsers', component: () => import('@/views/admin/UserManage.vue'), meta: { admin: true } },
   { path: '/admin/dashboard', name: 'AdminDashboard', component: () => import('@/views/admin/Dashboard.vue'), meta: { admin: true } },
+  { path: '/admin/scores', name: 'AdminScores', component: () => import('@/views/admin/Scores.vue'), meta: { admin: true } },
   // 老师端
   { path: '/teacher/classes', name: 'TeacherClasses', component: () => import('@/views/teacher/ClassManage.vue'), meta: { teacher: true } },
   { path: '/teacher/papers', name: 'TeacherPapers', component: () => import('@/views/Papers.vue'), meta: { teacher: true } },
