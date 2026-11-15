@@ -129,6 +129,18 @@
           </template>
 
           <el-button
+            v-if="p.ready && (isAdmin || p.uploader_id === userStore.user?.id)"
+            size="small"
+            :loading="syncingId === p.id"
+            @click="syncQuestions(p)"
+          >题目入库</el-button>
+          <el-button
+            v-if="isAdmin || p.uploader_id === userStore.user?.id"
+            size="small"
+            @click="editDuration(p)"
+          >时长</el-button>
+
+          <el-button
             v-if="isAdmin || p.uploader_id === userStore.user?.id"
             size="small"
             type="danger"
@@ -397,6 +409,47 @@ const reviewPaperId = ref(null)
 const reviewPageCount = ref(1)
 const cropVisible = ref(false)
 const cropRow = ref(null)
+const syncingId = ref(null)
+
+const syncQuestions = async (p) => {
+  syncingId.value = p.id
+  try {
+    const res = await api.post(`/papers/${p.id}/questions/sync`)
+    ElMessage.success(res.message || '题目已同步到题库')
+  } catch (e) {
+    // 错误由拦截器提示
+  } finally {
+    syncingId.value = null
+  }
+}
+
+const editDuration = async (p) => {
+  try {
+    const { value } = await ElMessageBox.prompt(
+      '设置这套卷建议作答时长（分钟），只影响之后开始的练习。',
+      '套卷时长',
+      {
+        inputValue: String(p.duration || 75),
+        inputPattern: /^\d+$/,
+        inputErrorMessage: '请输入整数分钟',
+        confirmButtonText: '保存',
+        cancelButtonText: '取消',
+      },
+    )
+    const duration = Number(value)
+    if (duration < 10 || duration > 300) {
+      ElMessage.warning('时长需在 10～300 分钟之间')
+      return
+    }
+    const res = await api.put(`/papers/${p.id}/settings`, { duration })
+    ElMessage.success(res.message || '时长已保存')
+    load()
+  } catch (e) {
+    if (e !== 'cancel') {
+      // 错误已由拦截器提示
+    }
+  }
+}
 
 const typeText = (t) =>
   ({ single: '单选', multiple: '多选', fill: '填空', calculation: '计算', subjective: '简答' }[t] || t)

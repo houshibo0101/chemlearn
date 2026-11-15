@@ -435,6 +435,65 @@ async def crop_question_figure(
     return {"ok": True, "figures": [filename]}
 
 
+@router.post("/{paper_id}/questions/sync", summary="管理员/上传老师把套卷题目同步到题库")
+async def sync_paper_questions(
+    paper_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    paper = await db.get(Paper, paper_id)
+    if not paper:
+        raise HTTPException(status_code=404, detail="试卷不存在")
+    if not _can_review(paper, current_user):
+        raise HTTPException(status_code=403, detail="只有管理员或上传老师能入库")
+    questions = list(paper.questions_json or [])
+    if not questions:
+        raise HTTPException(status_code=400, detail="这套卷还没有解析出题目")
+
+    # 重新写入 questions 表；旧 question_id 失效时会自动重建并回填
+    await paper_service.save_questions(db, paper, questions)
+    paper.questions_json = questions
+    from sqlalchemy.orm.attributes import flag_modified
+    flag_modified(paper, "questions_json")
+    paper.html_path = paper_service.write_html(
+        paper.id, paper_service.render_html(paper, questions)
+    )
+    await db.commit()
+    return {
+        "message": f"已同步 {len(questions)} 道题到题库",
+        "count": len(questions),
+        "question_ids": [q.get("question_id") for q in questions],
+    }
+
+
+@router.put("/{paper_id}/settings", summary="管理员/上传老师修改套卷时长")
+async def update_paper_settings(
+    paper_id: int,
+    payload: dict,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    paper = await db.get(Paper, paper_id)
+    if not paper:
+        raise HTTPException(status_code=404, detail="试卷不存在")
+    if not _can_review(paper, current_user):
+        raise HTTPException(status_code=403, detail="只有管理员或上传老师能修改")
+    try:
+        duration = int(payload.get("duration"))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="时长必须是整数分钟")
+    if duration < 10 or duration > 300:
+        raise HTTPException(status_code=400, detail="时长需在 10～300 分钟之间")
+
+    paper.duration = duration
+    # 做题页顶部显示时长的数据来自这里，需要重新渲染
+    paper.html_path = paper_service.write_html(
+        paper.id, paper_service.render_html(paper, paper.questions_json or [])
+    )
+    await db.commit()
+    return {"message": f"时长已改为 {duration} 分钟", "duration": duration}
+
+
 @router.post("/{paper_id}/start", summary="开始答题（服务端计时，防刷新重置）")
 async def start_paper(
     paper_id: int,
