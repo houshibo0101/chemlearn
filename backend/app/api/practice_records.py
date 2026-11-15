@@ -9,13 +9,17 @@
 - GET  /practice-records/heatmap  学习活跃热力图
 """
 from fastapi import APIRouter, Depends, Query, HTTPException
-from sqlalchemy import select, func
+from fastapi.responses import StreamingResponse
+from sqlalchemy import select, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timezone, timedelta
 from collections import defaultdict
+from urllib.parse import quote
+import io
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models import User, Question, PracticeRecord
+from app.services.report_pdf import build_report_pdf
 
 router = APIRouter(prefix="/practice-records", tags=["做题记录"])
 
@@ -247,6 +251,47 @@ async def records_knowledge(
         "mastered_points": [d["knowledge_point"] for d in details if d["level"] == 3],
         "details": details,
     }
+
+
+# ========== 学习报告 PDF ==========
+
+@router.get("/report/pdf", summary="一键生成我的学习报告 PDF")
+async def export_learning_report_pdf(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    stats = await records_stats(current_user=current_user, db=db)
+    trend_data = await records_trend(days=14, current_user=current_user, db=db)
+    knowledge = await records_knowledge(current_user=current_user, db=db)
+    heatmap = await records_heatmap(days=91, current_user=current_user, db=db)
+
+    rows = (await db.execute(
+        select(PracticeRecord, Question)
+        .join(Question, PracticeRecord.question_id == Question.id)
+        .where(PracticeRecord.user_id == current_user.id)
+        .order_by(desc(PracticeRecord.submitted_at))
+        .limit(8)
+    )).all()
+    recent = [{
+        "question_title": q.title,
+        "knowledge_point": q.knowledge_point,
+        "is_correct": r.is_correct,
+        "score": r.score,
+        "total_score": r.total_score,
+        "submitted_at": r.submitted_at,
+    } for r, q in rows]
+
+    data = build_report_pdf(
+        {"name": current_user.full_name or current_user.username, "username": current_user.username},
+        stats, trend_data.get("trend") or [], knowledge, heatmap, recent,
+    )
+    day = (datetime.now(timezone.utc) + timedelta(hours=8)).strftime("%Y%m%d")
+    filename = f"学习报告_{current_user.username}_{day}.pdf"
+    return StreamingResponse(
+        io.BytesIO(data),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(filename)}"},
+    )
 
 
 # ========== 学习活跃热力图 ==========

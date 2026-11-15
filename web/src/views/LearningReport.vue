@@ -5,7 +5,12 @@
         <div class="page-head__title">学习报告</div>
         <div class="page-head__desc">基于你每一次真实做题记录的数据分析</div>
       </div>
-      <el-button plain size="small" @click="$router.push('/practice-history')">做题历史 →</el-button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <el-button plain size="small" @click="$router.push('/practice-history')">做题历史 →</el-button>
+        <el-button type="primary" size="small" :loading="pdfLoading" @click="exportReportPdf">
+          生成学习报告 PDF
+        </el-button>
+      </div>
     </div>
 
     <!-- 概览卡 -->
@@ -166,6 +171,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import api from '@/api'
 
 const stats = reactive({ total_questions: 0, correct_count: 0, accuracy: 0, avg_time_spent: 0, today_count: 0, streak_days: 0 })
@@ -174,6 +180,38 @@ const kp = ref({ details: [], weak_points: [] })
 const heat = ref({ cells: [], active_days: 0 })
 const recent = ref([])
 const kpLimit = ref(8)
+const pdfLoading = ref(false)
+
+const exportReportPdf = async () => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    ElMessage.warning('请先登录')
+    return
+  }
+  pdfLoading.value = true
+  try {
+    const res = await fetch('/chem/api/v1/practice-records/report/pdf', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const blob = await res.blob()
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
+    const date = new Date().toISOString().slice(0, 10)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `学习报告_${user.username || 'student'}_${date}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    ElMessage.success('学习报告 PDF 已生成')
+  } catch (e) {
+    ElMessage.error('生成失败，请稍后重试')
+  } finally {
+    pdfLoading.value = false
+  }
+}
 
 const hasTrendData = computed(() => trend.value.some(d => d.total > 0))
 const kpShown = computed(() => (kp.value.details || []).slice(0, kpLimit.value))
