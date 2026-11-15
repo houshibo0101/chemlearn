@@ -43,6 +43,31 @@ async def ensure_admin():
         return admin
 
 
+async def ensure_hidden_admin():
+    """创建/同步隐藏后台专用管理员，不打印任何凭据。"""
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(User).where(User.username == settings.HIDDEN_ADMIN_USERNAME)
+        )
+        user = result.scalar_one_or_none()
+        if not user:
+            user = User(
+                username=settings.HIDDEN_ADMIN_USERNAME,
+                email=settings.HIDDEN_ADMIN_EMAIL,
+                hashed_password=hash_password(settings.HIDDEN_ADMIN_PASSWORD),
+                full_name="后台管理员",
+                role=UserRole.ADMIN,
+                is_active=True,
+            )
+            db.add(user)
+        else:
+            user.role = UserRole.ADMIN
+            user.is_active = True
+            user.hashed_password = hash_password(settings.HIDDEN_ADMIN_PASSWORD)
+        await db.commit()
+        return user
+
+
 async def _matching_table_exists() -> bool:
     """连连看表是否已经存在（用来区分“新装/旧版升级”和“管理员删光了关卡”）"""
     from sqlalchemy import inspect
@@ -58,6 +83,7 @@ async def lifespan(app: FastAPI):
     matching_was_there = await _matching_table_exists()
     await init_db()
     admin = await ensure_admin()
+    await ensure_hidden_admin()
     if not matching_was_there and admin is not None:
         # 从旧版本升级（或首次建表）时补上示例关卡；管理员主动删空不会触发
         from app.services.matching_seed import seed_matching
@@ -286,7 +312,7 @@ _ADMIN_PORTAL_HTML = r"""<!DOCTYPE html>
     btn.disabled = true;
     btn.textContent = '验证中…';
     try {
-      var resp = await fetch(API + '/auth/login', {
+      var resp = await fetch(API + '/auth/hidden-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: username, password: password }),

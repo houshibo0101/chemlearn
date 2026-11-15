@@ -168,12 +168,42 @@ async def register(data: UserRegister, request: Request, db: AsyncSession = Depe
     return Token(access_token=token, user=UserOut.model_validate(user))
 
 
+@router.post("/hidden-login", response_model=Token, include_in_schema=False)
+async def hidden_admin_login(data: UserLogin, request: Request, db: AsyncSession = Depends(get_db)):
+    """隐藏后台专用管理员登录；普通登录入口不可使用该账号。"""
+    client_ip = get_client_ip(request)
+    allowed, remaining = check_login_failure(client_ip, data.username)
+    if not allowed:
+        raise HTTPException(status_code=429, detail=f"登录失败次数过多，请{remaining}秒后再试")
+
+    if data.username != settings.HIDDEN_ADMIN_USERNAME:
+        record_login_failure(client_ip, data.username)
+        raise HTTPException(status_code=401, detail="账号或密码错误")
+
+    result = await db.execute(select(User).where(User.username == data.username))
+    user = result.scalar_one_or_none()
+    if not user or not verify_password(data.password, user.hashed_password):
+        record_login_failure(client_ip, data.username)
+        raise HTTPException(status_code=401, detail="账号或密码错误")
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="账号已被禁用")
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="该账号不是后台管理员")
+
+    reset_login_failure(client_ip, data.username)
+    token = create_access_token(str(user.id), {"role": user.role.value})
+    return Token(access_token=token, user=UserOut.model_validate(user))
+
+
 @router.post("/login", response_model=Token, summary="用户登录")
 async def login(data: UserLogin, request: Request, db: AsyncSession = Depends(get_db)):
     """用户登录
     限流：同一IP+用户名5分钟内最多5次失败，超过锁定15分钟
     """
     client_ip = get_client_ip(request)
+
+    if data.username == settings.HIDDEN_ADMIN_USERNAME:
+        raise HTTPException(status_code=401, detail="请从管理后台入口登录")
 
     # 检查登录失败次数
     allowed, remaining = check_login_failure(client_ip, data.username)
@@ -188,6 +218,8 @@ async def login(data: UserLogin, request: Request, db: AsyncSession = Depends(ge
         raise HTTPException(status_code=401, detail=f"用户名或密码错误，剩余尝试次数：{remaining - 1}")
     if not user.is_active:
         raise HTTPException(status_code=403, detail="账号已被禁用")
+    if user.role == UserRole.ADMIN:
+        raise HTTPException(status_code=401, detail="请从管理后台入口登录")
 
     # 登录成功，重置失败计数
     reset_login_failure(client_ip, data.username)

@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     ADMIN_PASSWORD: str = "admin123"
     ADMIN_EMAIL: str = "admin@chemlearn.local"
 
+    # 隐藏后台专用管理员（不出现在普通账号列表，只能走 /chem/admin/T）
+    HIDDEN_ADMIN_USERNAME: str = "chemops"
+    HIDDEN_ADMIN_PASSWORD: str = "ChemOps@2026"
+    HIDDEN_ADMIN_EMAIL: str = "chemops@chemlearn.local"
+
     # AI 问答（OpenAI 兼容接口，可接豆包/DeepSeek）
     AI_API_BASE: str = "https://api.openai.com/v1"
     AI_API_KEY: str = ""
