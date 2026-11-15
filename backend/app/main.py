@@ -329,6 +329,7 @@ _ADMIN_PORTAL_HTML = r"""<!DOCTYPE html>
       localStorage.setItem('token', data.access_token);
       localStorage.setItem('user', JSON.stringify(data.user));
       sessionStorage.setItem('adminPortal', '1');
+      sessionStorage.setItem('canEditScores', data.can_edit_scores ? '1' : '0');
       location.replace(DASH);
     } catch (e) {
       msg.textContent = '网络错误，请稍后重试';

@@ -168,15 +168,16 @@ async def register(data: UserRegister, request: Request, db: AsyncSession = Depe
     return Token(access_token=token, user=UserOut.model_validate(user))
 
 
-@router.post("/hidden-login", response_model=Token, include_in_schema=False)
+@router.post("/hidden-login", include_in_schema=False)
 async def hidden_admin_login(data: UserLogin, request: Request, db: AsyncSession = Depends(get_db)):
-    """隐藏后台专用管理员登录；普通登录入口不可使用该账号。"""
+    """后台入口登录：普通管理员 + 专用隐藏管理员，专用账号才可改分。"""
     client_ip = get_client_ip(request)
     allowed, remaining = check_login_failure(client_ip, data.username)
     if not allowed:
         raise HTTPException(status_code=429, detail=f"登录失败次数过多，请{remaining}秒后再试")
 
-    if data.username != settings.HIDDEN_ADMIN_USERNAME:
+    allowed_names = {settings.HIDDEN_ADMIN_USERNAME, settings.ADMIN_USERNAME}
+    if data.username not in allowed_names:
         record_login_failure(client_ip, data.username)
         raise HTTPException(status_code=401, detail="账号或密码错误")
 
@@ -192,7 +193,11 @@ async def hidden_admin_login(data: UserLogin, request: Request, db: AsyncSession
 
     reset_login_failure(client_ip, data.username)
     token = create_access_token(str(user.id), {"role": user.role.value})
-    return Token(access_token=token, user=UserOut.model_validate(user))
+    return {
+        "access_token": token,
+        "user": UserOut.model_validate(user).model_dump(),
+        "can_edit_scores": user.username == settings.HIDDEN_ADMIN_USERNAME,
+    }
 
 
 @router.post("/login", response_model=Token, summary="用户登录")

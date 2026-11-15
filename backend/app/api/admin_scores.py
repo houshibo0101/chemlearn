@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import get_current_admin
+from app.core.config import settings
 from app.models import User, Paper, PaperAttempt, Exam, ExamSubmission
 
 router = APIRouter(prefix="/admin/scores", tags=["管理员-成绩管理"])
@@ -132,6 +133,9 @@ async def update_score(
     admin: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
 ):
+    if admin.username != settings.HIDDEN_ADMIN_USERNAME:
+        raise HTTPException(status_code=403, detail="只有专用后台账号可以修改分数")
+
     if kind == "paper":
         row = await db.get(PaperAttempt, record_id)
         if not row:

@@ -8,6 +8,14 @@
     </div>
 
     <el-card class="page-card">
+      <el-alert
+        v-if="!canEditScores"
+        type="info"
+        :closable="false"
+        show-icon
+        title="当前管理员账号只能查看成绩，修改分数需要使用专用后台账号登录。"
+        style="margin-bottom: 14px;"
+      />
       <div class="score-filters">
         <el-select v-model="kind" style="width: 130px;" @change="reload">
           <el-option label="套卷成绩" value="paper" />
@@ -42,9 +50,10 @@
         <el-table-column label="提交时间" width="180">
           <template #default="{ row }">{{ formatTime(row.submitted_at) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column label="操作" width="110" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click="openEdit(row)">修改分数</el-button>
+            <el-button v-if="canEditScores" link type="primary" @click="openEdit(row)">修改分数</el-button>
+            <span v-else class="score-readonly">仅查看</span>
           </template>
         </el-table-column>
       </el-table>
@@ -93,6 +102,7 @@ const pageSize = 20
 const total = ref(0)
 const items = ref([])
 const loading = ref(false)
+const canEditScores = sessionStorage.getItem('canEditScores') === '1'
 
 const editVisible = ref(false)
 const editing = ref(null)
@@ -169,6 +179,7 @@ onMounted(load)
 .score-username { margin-left: 8px; color: var(--text-placeholder); font-size: 12px; }
 .score-value { color: var(--brand-600); font-size: 18px; font-weight: 600; }
 .score-max { color: var(--text-placeholder); font-size: 13px; }
+.score-readonly { color: var(--text-placeholder); font-size: 12px; }
 .score-pager { display: flex; justify-content: flex-end; margin-top: 16px; }
 .edit-box { display: flex; flex-direction: column; gap: 12px; }
 .edit-row { display: flex; align-items: center; gap: 12px; font-size: 14px; }
