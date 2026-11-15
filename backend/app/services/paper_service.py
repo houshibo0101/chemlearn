@@ -612,6 +612,9 @@ def normalize_question(q: dict, fallback_no: int) -> dict | None:
                 options.append({"key": key[:4], "text": text})
         elif isinstance(o, str):
             options.append({"key": chr(65 + len(options)), "text": o.strip()})
+    # 填空/计算/简答即使带了残留 options，也不能渲染成选择题
+    if qtype not in ("single", "multiple"):
+        options = []
 
     try:
         no = int(str(q.get("no") or fallback_no).strip())

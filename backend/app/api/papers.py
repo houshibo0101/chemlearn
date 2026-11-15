@@ -408,6 +408,10 @@ async def update_question(
             target["score"] = sum(s["score"] for s in subs)
             target["answer"] = "；".join(s["answer"] for s in subs if s["answer"]) or target.get("answer", "")
 
+    # 非选择题不允许保留选项，避免做题页误渲染成选择题
+    if target.get("type") not in ("single", "multiple"):
+        target["options"] = []
+
     if not (target.get("title") or "").strip():
         raise HTTPException(status_code=400, detail="题干不能为空")
 

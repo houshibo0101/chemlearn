@@ -6,6 +6,17 @@ from app.models import Paper
 from app.services import paper_service as ps
 
 
+def test_fill_question_drops_stale_options():
+    q = ps.normalize_question({
+        "no": 1,
+        "type": "fill",
+        "title": "填空题",
+        "options": [{"key": "A", "text": "甲"}, {"key": "B", "text": "乙"}],
+    }, 1)
+    assert q is not None
+    assert q["options"] == []
+
+
 @pytest.mark.asyncio
 async def test_judge_sub_questions_partial(monkeypatch):
     async def no_ai(paper, answers):

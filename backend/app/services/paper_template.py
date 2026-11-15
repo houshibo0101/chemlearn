@@ -394,8 +394,9 @@ function renderList() {
     card.className = 'q';
     card.id = 'q' + q.no;
 
+    const isChoice = q.type === 'single' || q.type === 'multiple';
     let optsHtml = '';
-    if (q.options && q.options.length) {
+    if (isChoice && q.options && q.options.length) {
       optsHtml = '<div class="opts">' + q.options.map((o) => {
         const key = o.key || o.value || '';
         const text = o.text || o.value || '';
@@ -404,7 +405,7 @@ function renderList() {
       }).join('') + '</div>';
     }
     let blankHtml = '';
-    if (!q.options || !q.options.length) {
+    if (!isChoice) {
       const subs = q.sub_questions || [];
       if (subs.length) {
         blankHtml = '<div class="sub-list">' + subs.map(function (sub, i) {
