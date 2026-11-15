@@ -398,23 +398,15 @@ async def update_question(
                 raise HTTPException(status_code=400, detail="小问格式不合法")
         if not isinstance(raw_subs, list):
             raise HTTPException(status_code=400, detail="小问必须是数组")
-        subs = []
-        for idx, sub in enumerate(raw_subs):
-            if not isinstance(sub, dict):
-                continue
-            content = str(sub.get("content") or "").strip()
-            answer = str(sub.get("answer") or "").strip()
-            if not content and not answer:
-                continue
-            try:
-                sub_score = max(0, int(sub.get("score") or 0))
-            except (TypeError, ValueError):
-                sub_score = 0
-            subs.append({"id": idx + 1, "content": content, "answer": answer, "score": sub_score})
+        subs = paper_service._clean_sub_questions(raw_subs)
         target["sub_questions"] = subs
         if subs:
-            target["score"] = sum(s["score"] for s in subs)
-            target["answer"] = "；".join(s["answer"] for s in subs if s["answer"]) or target.get("answer", "")
+            target["score"] = sum(node["score"] for node in subs)
+            leaves = paper_service._flatten_sub_leaves(subs)
+            target["answer"] = "；".join(
+                str(node.get("answer") or "").strip()
+                for _, node in leaves if str(node.get("answer") or "").strip()
+            ) or target.get("answer", "")
 
     # 非选择题不允许保留选项，避免做题页误渲染成选择题
     if target.get("type") not in ("single", "multiple"):

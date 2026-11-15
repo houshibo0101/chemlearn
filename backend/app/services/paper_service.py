@@ -568,9 +568,9 @@ def _clean_text(s) -> str:
     return re.sub(r"\\([%_()^&{}$#\s])", r"\1", str(s))
 
 
-def _clean_sub_questions(raw) -> list:
-    """小问：[{id,content,answer,score}]，用于填空/计算/简答。"""
-    if not isinstance(raw, list):
+def _clean_sub_questions(raw, depth: int = 0) -> list:
+    """小问树：[{id,content,answer,score,children}]，父级分值等于子问之和。"""
+    if not isinstance(raw, list) or depth > 6:
         return []
     out = []
     for i, item in enumerate(raw):
@@ -582,14 +582,33 @@ def _clean_sub_questions(raw) -> list:
             score = max(0, int(float(item.get("score") or 0)))
         except (TypeError, ValueError):
             score = 0
-        if not content and not answer:
+        children = _clean_sub_questions(item.get("children"), depth + 1)
+        if children:
+            score = sum(child["score"] for child in children)
+        if not content and not answer and not children:
             continue
         out.append({
             "id": i + 1,
             "content": content,
             "answer": answer,
             "score": score,
+            "children": children,
         })
+    return out
+
+
+def _flatten_sub_leaves(nodes: list, prefix: str = "") -> list:
+    """把递归小问展开成叶子列表，path 形如 '0.1'，用于答题框和判分。"""
+    out = []
+    for i, node in enumerate(nodes or []):
+        if not isinstance(node, dict):
+            continue
+        path = f"{prefix}.{i}" if prefix else str(i)
+        children = node.get("children") or []
+        if children:
+            out.extend(_flatten_sub_leaves(children, path))
+        else:
+            out.append((path, node))
     return out
 
 
@@ -972,17 +991,18 @@ async def judge(paper: Paper, answers: dict, self_judge: dict | None = None) -> 
         raw_mine = answers.get(no, "")
         subs = q.get("sub_questions") or []
 
-        # 多小问：每个小问独立比对、独立得分，总分为小问得分之和
+        # 多小问：递归到叶子，每个叶子独立比对、独立得分
         if subs:
-            full = sum(int(s.get("score") or 0) for s in subs) or int(q.get("score") or 0)
+            leaves = _flatten_sub_leaves(subs)
+            full = sum(int(node.get("score") or 0) for _, node in leaves) or int(q.get("score") or 0)
             mine_obj = raw_mine if isinstance(raw_mine, dict) else {}
             sub_results = []
             earned = 0
             any_answer = False
             all_ok = True
-            for idx, sub in enumerate(subs):
+            for path, sub in leaves:
                 ans = str(
-                    mine_obj.get(str(idx))
+                    mine_obj.get(path)
                     or mine_obj.get(str(sub.get("id")))
                     or ""
                 ).strip()
@@ -996,7 +1016,9 @@ async def judge(paper: Paper, answers: dict, self_judge: dict | None = None) -> 
                 else:
                     all_ok = False
                 sub_results.append({
-                    "id": sub.get("id") or idx + 1,
+                    "id": sub.get("id"),
+                    "path": path,
+                    "content": sub.get("content") or "",
                     "mine": ans,
                     "answer": std,
                     "ok": ok,

@@ -41,23 +41,7 @@
         </div>
       </el-form-item>
       <el-form-item v-if="!isChoice" label="小问">
-        <div class="sub-editor">
-          <div v-for="(sub, i) in form.sub_questions" :key="i" class="sub-row">
-            <div class="sub-row__head">
-              <span>第 {{ i + 1 }} 小问</span>
-              <el-button link type="danger" size="small" @click="removeSub(i)">删除</el-button>
-            </div>
-            <el-input v-model="sub.content" type="textarea" :rows="2" placeholder="小问内容，例如 (1) 写出…" />
-            <div class="sub-row__bottom">
-              <el-input v-model="sub.answer" placeholder="该小问参考答案" />
-              <el-input-number v-model="sub.score" :min="0" :max="100" size="small" />
-            </div>
-          </div>
-          <div class="sub-actions">
-            <el-button size="small" plain @click="addSub">+ 添加小问</el-button>
-            <span v-if="form.sub_questions.length" class="sub-total">小问合计 {{ subTotal }} 分</span>
-          </div>
-        </div>
+        <SubQuestionEditor v-model="form.sub_questions" />
       </el-form-item>
       <el-form-item label="标准答案">
         <el-input v-model="form.answer" type="textarea" :rows="2" placeholder="选择题填字母，如 A / AB；填空写参考答案" />
@@ -86,6 +70,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import api from '@/api'
+import SubQuestionEditor from '@/components/SubQuestionEditor.vue'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -95,8 +80,13 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'saved'])
 const saving = ref(false)
 const isChoice = computed(() => form.type === 'single' || form.type === 'multiple')
-const subTotal = computed(() =>
-  form.sub_questions.reduce((sum, sub) => sum + Number(sub.score || 0), 0))
+const sumScores = (nodes) => (nodes || []).reduce((sum, node) => {
+  if (Array.isArray(node.children) && node.children.length) {
+    return sum + sumScores(node.children)
+  }
+  return sum + Number(node.score || 0)
+}, 0)
+const subTotal = computed(() => sumScores(form.sub_questions))
 
 const form = reactive({
   no: 0,
@@ -118,6 +108,23 @@ const defaultOptions = () => ([
   { key: 'D', text: '' },
 ])
 
+const cloneSubs = (nodes) => (nodes || []).map((node) => ({
+  content: String(node.content || ''),
+  answer: String(node.answer || ''),
+  score: Number(node.score || 0),
+  children: cloneSubs(node.children),
+}))
+
+const cleanSubs = (nodes) => (nodes || []).map((node) => {
+  const children = cleanSubs(node.children)
+  return {
+    content: String(node.content || '').trim(),
+    answer: children.length ? '' : String(node.answer || '').trim(),
+    score: children.length ? sumScores(children) : Number(node.score || 0),
+    children,
+  }
+}).filter((node) => node.content || node.answer || node.children.length)
+
 const loadFromQuestion = () => {
   const q = props.question || {}
   const opts = Array.isArray(q.options) ? q.options : []
@@ -129,11 +136,7 @@ const loadFromQuestion = () => {
     ? opts.map((o) => ({ key: String(o.key || ''), text: String(o.text || '') }))
     : defaultOptions()
   const subs = Array.isArray(q.sub_questions) ? q.sub_questions : []
-  form.sub_questions = subs.map((s) => ({
-    content: String(s.content || ''),
-    answer: String(s.answer || ''),
-    score: Number(s.score || 0),
-  }))
+  form.sub_questions = cloneSubs(subs)
   form.answer = q.answer || ''
   form.analysis = q.analysis || ''
   form.score = q.score || 0
@@ -152,12 +155,6 @@ const addOption = () => {
 const removeOption = (index) => {
   form.options.splice(index, 1)
 }
-const addSub = () => {
-  form.sub_questions.push({ content: '', answer: '', score: 2 })
-}
-const removeSub = (index) => {
-  form.sub_questions.splice(index, 1)
-}
 
 const save = async () => {
   if (!form.title.trim()) {
@@ -167,15 +164,7 @@ const save = async () => {
   if (!props.paperId || !form.no) return
   saving.value = true
   try {
-    const subs = isChoice.value
-      ? []
-      : form.sub_questions
-        .filter((s) => String(s.content || '').trim() || String(s.answer || '').trim())
-        .map((s) => ({
-          content: String(s.content || '').trim(),
-          answer: String(s.answer || '').trim(),
-          score: Number(s.score || 0),
-        }))
+    const subs = isChoice.value ? [] : cleanSubs(form.sub_questions)
     const res = await api.patch(`/papers/${props.paperId}/questions/${form.no}`, {
       type: form.type,
       title: form.title.trim(),
@@ -184,7 +173,7 @@ const save = async () => {
       sub_questions: subs,
       answer: form.answer,
       analysis: form.analysis,
-      score: subs.length ? subs.reduce((sum, s) => sum + s.score, 0) : form.score,
+      score: subs.length ? sumScores(subs) : form.score,
       knowledge_point: form.knowledge_point,
     })
     ElMessage.success(`第 ${form.no} 题已保存，做题页已更新`)

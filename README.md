@@ -19,7 +19,7 @@
 |---|---|
 | [快速开始](https://github.com/houshibo0101/chemlearn/wiki/Quick-Start) | 三种部署方式的完整步骤 |
 | [功能说明](https://github.com/houshibo0101/chemlearn/wiki/Features) | 学生 / 老师 / 管理员各能做什么 |
-| [套卷练习](https://github.com/houshibo0101/chemlearn/wiki/Exam-Papers) | 上传 PDF → AI 结构化 → 题目自动入库 → 带图题裁剪 → 判分；时长可调，题目校对支持填空题多小问各自答题框和分值 |
+| [套卷练习](https://github.com/houshibo0101/chemlearn/wiki/Exam-Papers) | 上传 PDF → AI 结构化 → 题目自动入库 → 带图题裁剪 → 判分；时长可调，题目校对支持填空题多级小问各自答题框和分值 |
 | [AI 配置](https://github.com/houshibo0101/chemlearn/wiki/AI-Setup) | 双模型分工、换模型、报错对照 |
 | [部署指南](https://github.com/houshibo0101/chemlearn/wiki/Deployment) | 端口、systemd、nginx、备份、升级 |
 | [常见问题](https://github.com/houshibo0101/chemlearn/wiki/FAQ) | 登录、AI、上传、性能 |
@@ -34,7 +34,7 @@
 | 文件 | 平台 | 说明 |
 |---|---|---|
 | [ChemLearn-Deployer-v1.3.0.exe](https://github.com/houshibo0101/chemlearn/releases/tag/v1.3.0) | Linux 服务器 | 填 IP、SSH 密码和 AI Key，自动装好 nginx / Python / systemd，3–6 分钟完成 |
-| [ChemLearnWindows-v2.1.30.exe](https://github.com/houshibo0101/chemlearn/releases/tag/windows-v2.1.30) | Windows 本机 | 双击部署到本机，界面里看地址 / 开系统 / 重置，局域网可访问 |
+| [ChemLearnWindows-v2.1.31.exe](https://github.com/houshibo0101/chemlearn/releases/tag/windows-v2.1.31) | Windows 本机 | 双击部署到本机，界面里看地址 / 开系统 / 重置，局域网可访问 |
 | [题库数据包 453 题](https://github.com/houshibo0101/chemlearn/releases/tag/question-bank-v1) | 通用 | 解压到 `backend/import_data/` 后跑导入脚本 |
 
 > Linux 部署器内置完整部署包（源码 + 前端 + 依赖清单），目标机只需能联网的 Ubuntu / Debian。

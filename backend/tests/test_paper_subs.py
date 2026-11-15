@@ -52,3 +52,41 @@ async def test_judge_sub_questions_partial(monkeypatch):
     result = await ps.judge(paper, {"1": {"0": "2", "1": "3", "2": "4"}}, {})
     assert result["score"] == 3
     assert result["details"][0]["ok"] is True
+
+
+@pytest.mark.asyncio
+async def test_judge_nested_sub_questions(monkeypatch):
+    async def no_ai(paper, answers):
+        return {}
+    monkeypatch.setattr(ps, "ai_grade_subjective", no_ai)
+
+    paper = Paper(
+        id=2,
+        title="嵌套小问",
+        total_score=4,
+        questions_json=[{
+            "no": 1,
+            "type": "subjective",
+            "title": "大题",
+            "options": [],
+            "score": 4,
+            "answer": "2；3",
+            "analysis": "",
+            "sub_questions": [{
+                "id": 1,
+                "content": "(1) 第一问",
+                "answer": "",
+                "score": 3,
+                "children": [
+                    {"id": 1, "content": "① 第一空", "answer": "2", "score": 1, "children": []},
+                    {"id": 2, "content": "② 第二空", "answer": "3", "score": 2, "children": []},
+                ],
+            }],
+        }],
+    )
+    result = await ps.judge(paper, {"1": {"0.0": "2", "0.1": "3"}}, {})
+    assert result["score"] == 3
+    detail = result["details"][0]
+    assert [s["path"] for s in detail["sub_results"]] == ["0.0", "0.1"]
+    assert [s["earned"] for s in detail["sub_results"]] == [1, 2]
+

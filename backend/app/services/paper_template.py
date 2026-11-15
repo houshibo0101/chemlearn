@@ -387,6 +387,30 @@ function updateNav() {
   $('doneCount').textContent = done;
 }
 
+function subQuestionsHtml(subs, qNo, prefix, depth) {
+  const list = subs || [];
+  if (!list.length) return '';
+  return '<div class="sub-list">' + list.map(function (sub, i) {
+    const path = prefix ? prefix + '.' + i : String(i);
+    const label = prefix ? prefix + '.' + (i + 1) : String(i + 1);
+    const children = sub.children || [];
+    const childHtml = children.length
+      ? subQuestionsHtml(children, qNo, path, (depth || 0) + 1)
+      : '';
+    return '<div class="sub-q" style="margin-left:' + ((depth || 0) * 18) + 'px">' +
+      '<div class="sub-q__head">' +
+        '<span class="sub-q__no">小问 ' + label + '</span>' +
+        '<span class="sub-q__score">' + (sub.score || 0) + ' 分</span>' +
+      '</div>' +
+      (sub.content ? '<div class="sub-q__content">' + esc(sub.content) + '</div>' : '') +
+      (children.length
+        ? childHtml
+        : '<textarea class="blank sub-blank" data-no="' + qNo + '" data-sub="' + path +
+          '" placeholder="小问 ' + label + ' 答案" rows="2"></textarea>') +
+      '</div>';
+  }).join('') + '</div>';
+}
+
 function renderList() {
   const wrap = $('list');
   PAPER.questions.forEach((q) => {
@@ -408,18 +432,7 @@ function renderList() {
     if (!isChoice) {
       const subs = q.sub_questions || [];
       if (subs.length) {
-        blankHtml = '<div class="sub-list">' + subs.map(function (sub, i) {
-          const label = sub.id || (i + 1);
-          return '<div class="sub-q">' +
-            '<div class="sub-q__head">' +
-              '<span class="sub-q__no">第 ' + label + ' 小问</span>' +
-              '<span class="sub-q__score">' + (sub.score || 0) + ' 分</span>' +
-            '</div>' +
-            (sub.content ? '<div class="sub-q__content">' + esc(sub.content) + '</div>' : '') +
-            '<textarea class="blank sub-blank" data-no="' + q.no + '" data-sub="' + i +
-              '" placeholder="第 ' + label + ' 小问答案" rows="2"></textarea>' +
-          '</div>';
-        }).join('') + '</div>';
+        blankHtml = subQuestionsHtml(subs, q.no, '', 0);
       } else {
         blankHtml = '<textarea class="blank" data-no="' + q.no +
           '" placeholder="在这里写你的答案（填空/计算/简答）" rows="2"></textarea>';
@@ -700,7 +713,8 @@ function showResult(d, used) {
       ? Object.values(item.mine).filter((v) => String(v || '').trim()).map((v) => esc(v)).join('；') || '未作答'
       : (hasAnswer(item.mine) ? esc(String(item.mine)) : '未作答');
     const subHtml = (item.sub_results || []).map(function (sub, i) {
-      return '<div class="ans__row">第 ' + (sub.id || (i + 1)) + ' 小问：' +
+      const label = sub.path || (i + 1);
+      return '<div class="ans__row">小问 ' + label + '：' +
         (sub.mine ? esc(sub.mine) : '未作答') +
         (sub.ok ? ' <span class="ok">✓</span>' : ' <span class="no">✗</span>') +
         ' <span style="color:var(--text-3);font-size:12px;">得分 ' + (sub.earned || 0) + '/' + (sub.score || 0) + '</span></div>';
