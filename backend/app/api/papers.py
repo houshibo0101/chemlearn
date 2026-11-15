@@ -7,6 +7,7 @@
   2. 管理员上传/审核通过 → 触发后台任务：AI 结构化 → 题目入库 → 渲染 HTML
   3. 学生点开套卷 → /page 返回做题页 → 交卷 POST /submit → 判分 + 错题入错题本
 """
+import json
 import os
 import re
 import uuid
@@ -316,6 +317,7 @@ async def paper_questions(
             "no": q.get("no"),
             "type": q.get("type"),
             "title": q.get("title"),
+            "content": q.get("content") or "",
             "options": q.get("options") or [],
             "answer": q.get("answer") or "",
             "analysis": q.get("analysis") or "",
@@ -323,6 +325,7 @@ async def paper_questions(
             "page": q.get("page"),
             "has_figure": q.get("has_figure"),
             "figures": q.get("figures") or [],
+            "knowledge_point": q.get("knowledge_point") or "",
         } for q in (paper.questions_json or [])],
     }
 
@@ -347,9 +350,39 @@ async def update_question(
     if not target:
         raise HTTPException(status_code=404, detail="没有这道题")
 
-    for field in ("answer", "analysis", "title"):
+    valid_types = {"single", "multiple", "fill", "calculation", "subjective"}
+    if "type" in payload:
+        qtype = str(payload.get("type") or "").strip()
+        if qtype not in valid_types:
+            raise HTTPException(status_code=400, detail="题型不合法")
+        target["type"] = qtype
+
+    for field in ("title", "content", "answer", "analysis", "knowledge_point"):
         if field in payload:
             target[field] = str(payload[field] or "")
+
+    if "options" in payload:
+        raw_options = payload.get("options") or []
+        if isinstance(raw_options, str):
+            try:
+                raw_options = json.loads(raw_options)
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail="选项格式不合法")
+        if not isinstance(raw_options, list):
+            raise HTTPException(status_code=400, detail="选项必须是数组")
+        cleaned = []
+        for opt in raw_options:
+            if not isinstance(opt, dict):
+                continue
+            key = str(opt.get("key") or "").strip()[:2]
+            text = str(opt.get("text") or "").strip()
+            if key:
+                cleaned.append({"key": key, "text": text})
+        target["options"] = cleaned
+
+    if not (target.get("title") or "").strip():
+        raise HTTPException(status_code=400, detail="题干不能为空")
+
     if "score" in payload:
         try:
             target["score"] = max(0, int(payload["score"]))
@@ -369,13 +402,19 @@ async def update_question(
             row.answer = target.get("answer") or "—"
             row.analysis = target.get("analysis") or ""
             row.title = (target.get("title") or "")[:500]
+            row.content = target.get("content") or ""
+            row.knowledge_point = (target.get("knowledge_point") or "")[:128] or None
+            row.question_type = paper_service.QTYPE_MAP.get(
+                target.get("type"), row.question_type)
+            options = target.get("options") or []
+            row.options = json.dumps(options, ensure_ascii=False) if options else None
 
     # 重新渲染做题页（分值/答案会显示在页面上）
     paper.html_path = paper_service.write_html(
         paper.id, paper_service.render_html(paper, questions)
     )
     await db.commit()
-    return {"ok": True, "answer": target.get("answer")}
+    return {"ok": True, "question": target}
 
 
 @router.post("/{paper_id}/questions/{no}/crop", summary="管理员/上传老师手动截图配图")

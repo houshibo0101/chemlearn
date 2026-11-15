@@ -204,6 +204,11 @@
             />
           </template>
         </el-table-column>
+        <el-table-column label="操作" width="92" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" size="small" @click="openQuestionEdit(row)">题目校对</el-button>
+          </template>
+        </el-table-column>
       </el-table>
       <template #footer>
         <span class="review-foot">共 {{ reviewItems.length }} 题 · 修改后自动保存</span>
@@ -218,6 +223,13 @@
       :initial-page="cropRow?.page || 1"
       :page-count="reviewPageCount"
       @saved="onCropSaved"
+    />
+
+    <PaperQuestionEditDialog
+      v-model="questionEditVisible"
+      :paper-id="reviewPaperId"
+      :question="editingQuestion"
+      @saved="onQuestionSaved"
     />
 
     <!-- 上传对话框 -->
@@ -296,6 +308,7 @@ import { Upload, UploadFilled, VideoPlay } from '@element-plus/icons-vue'
 import api from '@/api'
 import { useUserStore } from '@/stores/user'
 import PdfCropDialog from '@/components/PdfCropDialog.vue'
+import PaperQuestionEditDialog from '@/components/PaperQuestionEditDialog.vue'
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -420,6 +433,8 @@ const reviewPaperId = ref(null)
 const reviewPageCount = ref(1)
 const cropVisible = ref(false)
 const cropRow = ref(null)
+const questionEditVisible = ref(false)
+const editingQuestion = ref(null)
 const syncingId = ref(null)
 
 const syncQuestions = async (p) => {
@@ -491,6 +506,17 @@ const openCrop = (row) => {
   }
   cropRow.value = row
   cropVisible.value = true
+}
+
+const openQuestionEdit = (row) => {
+  editingQuestion.value = row
+  questionEditVisible.value = true
+}
+
+const onQuestionSaved = (question) => {
+  if (!question) return
+  const row = reviewItems.value.find((item) => String(item.no) === String(question.no))
+  if (row) Object.assign(row, question)
 }
 
 const onCropSaved = (figures) => {
