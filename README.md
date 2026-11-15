@@ -1,4 +1,4 @@
-﻿# 化学学习系统 · ChemLearn
+# 化学学习系统 · ChemLearn
 
 [![CI](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml/badge.svg)](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml)
 
@@ -58,7 +58,7 @@
 | 错题本 | 自动收录错题，支持重做、导出 Excel |
 | AI 问答 | 接入大模型 API，针对题目做讲解；只回答化学相关问题，学生累计 5 次无关提问会停用，老师可在班级学生列表解封；管理员点「AI Token 消耗」卡片可改接口 / Key / 模型 |
 | 班级管理 | 建班、邀请学生、查看班级练习情况 |
-| 作业 / 考试 | 布置作业与考试，自动统计得分与正确率 |
+| 作业 / 考试 | 布置作业与考试；考试支持设置时长、总分、时间、班级、题目与分值，自动统计得分与正确率 |
 | 题库管理 | 后台增删改查题目，支持 Excel / PDF 批量导入 |
 | 账号管理 | 学生/教师/管理员三种角色，支持四列 Excel 批量导入（姓名 / 学段 / 班级 / 身份）与密码重置 |
 | 学习报告 | 个人与班级维度的正确率、知识点掌握度统计 |
