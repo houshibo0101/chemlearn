@@ -28,6 +28,7 @@
         <template v-else-if="userStore.user?.role === 'teacher'">
           <el-menu-item index="/ai"><el-icon><ChatDotRound /></el-icon><span>AI问答</span></el-menu-item>
           <el-menu-item index="/papers"><el-icon><Files /></el-icon><span>套卷练习</span></el-menu-item>
+          <el-menu-item index="/teacher/papers"><el-icon><Files /></el-icon><span>套卷管理</span></el-menu-item>
           <el-menu-item index="/matching"><el-icon><Grid /></el-icon><span>化学连连看</span></el-menu-item>
           <el-menu-item index="/matching/manage"><el-icon><SetUp /></el-icon><span>连连看管理</span></el-menu-item>
           <el-menu-item index="/teacher/classes"><el-icon><School /></el-icon><span>班级管理</span></el-menu-item>

@@ -2,9 +2,11 @@
   <div class="app-container">
     <div class="page-head">
       <div>
-        <div class="page-head__title">套卷练习</div>
+        <div class="page-head__title">{{ isManagePage ? '套卷管理' : '套卷练习' }}</div>
         <div class="page-head__desc">
-          整份高考卷限时演练，交卷后错题自动进错题本
+          {{ isManagePage
+            ? '管理自己上传的套卷：审核状态、生成进度、题目入库、时长和配图'
+            : '整份高考卷限时演练，交卷后错题自动进错题本' }}
         </div>
       </div>
       <div class="page-head__actions">
@@ -287,16 +289,19 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Upload, UploadFilled, VideoPlay } from '@element-plus/icons-vue'
 import api from '@/api'
 import { useUserStore } from '@/stores/user'
 import PdfCropDialog from '@/components/PdfCropDialog.vue'
 
+const route = useRoute()
 const userStore = useUserStore()
 const isAdmin = computed(() => (userStore.user?.role || '').toLowerCase() === 'admin')
 const isTeacher = computed(() => ['admin', 'teacher'].includes((userStore.user?.role || '').toLowerCase()))
+const isManagePage = computed(() => route.path === '/teacher/papers')
 
 const list = ref([])
 const loading = ref(false)
@@ -336,6 +341,7 @@ const load = async (silent = false) => {
   if (!silent) loading.value = true
   try {
     const params = {}
+    if (isManagePage.value) params.mine = true
     if (isAdmin.value && tab.value !== 'all') params.status = tab.value
     const res = await api.get('/papers', { params })
     list.value = res.items || []
@@ -346,6 +352,11 @@ const load = async (silent = false) => {
     loading.value = false
   }
 }
+
+watch(() => route.path, () => {
+  tab.value = 'all'
+  load()
+})
 
 const setTab = (v) => { tab.value = v; load() }
 

@@ -24,6 +24,7 @@ const routes = [
   { path: '/admin/dashboard', name: 'AdminDashboard', component: () => import('@/views/admin/Dashboard.vue'), meta: { admin: true } },
   // 老师端
   { path: '/teacher/classes', name: 'TeacherClasses', component: () => import('@/views/teacher/ClassManage.vue'), meta: { teacher: true } },
+  { path: '/teacher/papers', name: 'TeacherPapers', component: () => import('@/views/Papers.vue'), meta: { teacher: true } },
   { path: '/teacher/assignments', name: 'TeacherAssignments', component: () => import('@/views/teacher/AssignmentManage.vue'), meta: { teacher: true } },
   { path: '/teacher/exams', name: 'TeacherExams', component: () => import('@/views/teacher/ExamManage.vue'), meta: { teacher: true } },
   { path: '/teacher/wrong-questions', name: 'TeacherWrong', component: () => import('@/views/teacher/StudentWrong.vue'), meta: { teacher: true } },

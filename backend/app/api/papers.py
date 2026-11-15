@@ -64,6 +64,7 @@ def _brief(p: Paper, for_admin: bool = False) -> dict:
         "uploader_id": p.uploader_id,
         "created_at": p.created_at.isoformat() if p.created_at else None,
         "source_filename": p.source_filename,
+        "review_note": p.review_note,
         "ready": p.gen_status == PaperGenStatus.DONE and bool(p.questions_json),
     }
     if for_admin:
