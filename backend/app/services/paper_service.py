@@ -14,6 +14,7 @@ import io
 import json
 import os
 import re
+import subprocess
 from datetime import datetime, timezone
 
 import httpx
@@ -72,6 +73,169 @@ def save_page_images(paper_id: int, pngs: list[bytes]) -> None:
 
 def page_image_path(paper_id: int, page_no: int) -> str:
     return os.path.join(PAPER_ROOT, "pages", str(paper_id), f"p{page_no}.png")
+
+
+FIGURE_ROOT = os.path.join(PAPER_ROOT, "figures")
+
+
+def figure_image_path(paper_id: int, filename: str) -> str:
+    return os.path.join(FIGURE_ROOT, str(paper_id), filename)
+
+
+def _text_question_anchors(page) -> dict:
+    """从文字层找题号行，返回 {题号: 顶部 y（pt）}。"""
+    anchors = {}
+    width = page.rect.width
+    try:
+        blocks = page.get_text("dict").get("blocks", [])
+    except Exception:
+        return anchors
+    for block in blocks:
+        if block.get("type") != 0:
+            continue
+        for line in block.get("lines", []):
+            text = "".join(span.get("text", "") for span in line.get("spans", [])).strip()
+            match = re.match(r"^(\d{1,2})\s*[.．、]", text)
+            if not match:
+                continue
+            bbox = line.get("bbox") or (0, 0, 0, 0)
+            if bbox[0] > width * 0.55:
+                continue
+            no = int(match.group(1))
+            if 1 <= no <= 100 and no not in anchors:
+                anchors[no] = bbox[1]
+    return anchors
+
+
+def _ocr_question_anchors(png_path: str, page_width: float, page_height: float,
+                          png_height: int) -> dict:
+    """扫描版用 Tesseract 找题号行，返回 {题号: 顶部 y（pt）}。
+
+    Tesseract 是可选依赖：Windows 本地部署器通常没装，找不到就回退整页图。
+    """
+    anchors = {}
+    try:
+        proc = subprocess.run(
+            ["tesseract", png_path, "stdout", "-l", "chi_sim+eng", "--psm", "6", "tsv"],
+            capture_output=True, text=True, timeout=90,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+        return anchors
+    if proc.returncode != 0:
+        return anchors
+    for line in proc.stdout.splitlines()[1:]:
+        cols = line.split("\t")
+        if len(cols) < 12 or cols[0] != "5":
+            continue
+        text = cols[11].strip()
+        match = re.match(r"^(\d{1,2})\s*[.．、]", text)
+        if not match:
+            continue
+        try:
+            left = int(cols[6])
+            top = int(cols[7])
+            width = int(cols[8])
+        except (TypeError, ValueError):
+            continue
+        if left > page_width * 0.55:
+            continue
+        no = int(match.group(1))
+        if not (1 <= no <= 100) or no in anchors:
+            continue
+        # 题号不应贴在最右侧；过滤掉正文里的“57.3”这类数字
+        if width > page_width * 0.2:
+            continue
+        anchors[no] = top * page_height / max(1, png_height)
+    return anchors
+
+
+def crop_question_images(paper_id: int, content: bytes, questions: list[dict]) -> int:
+    """把带图题裁成“本题区域”图片，返回成功裁剪数量。
+
+    - 文字型 PDF：用 PyMuPDF 文字坐标找题号
+    - 扫描版：用 Tesseract OCR 找题号
+    - 找不到题号/没装 Tesseract：保持原行为，做题页回退整页图
+    """
+    try:
+        import pymupdf
+    except ImportError:
+        return 0
+
+    wanted = {}
+    for q in questions:
+        if not q.get("has_figure"):
+            continue
+        try:
+            page_no = int(q.get("page") or 0)
+        except (TypeError, ValueError):
+            continue
+        if page_no < 1:
+            continue
+        wanted.setdefault(page_no, []).append(q)
+    if not wanted:
+        return 0
+
+    out_dir = os.path.join(FIGURE_ROOT, str(paper_id))
+    os.makedirs(out_dir, exist_ok=True)
+    doc = pymupdf.open(stream=content, filetype="pdf")
+    cropped = 0
+
+    for page_no, page_questions in wanted.items():
+        if page_no > doc.page_count:
+            continue
+        page = doc[page_no - 1]
+        png_path = page_image_path(paper_id, page_no)
+        if not os.path.isfile(png_path):
+            continue
+
+        anchors = _text_question_anchors(page)
+        if not anchors:
+            try:
+                import pymupdf as _fitz
+                pix = _fitz.Pixmap(png_path)
+                anchors = _ocr_question_anchors(
+                    png_path, page.rect.width, page.rect.height, pix.height)
+                pix = None
+            except Exception:
+                anchors = {}
+        if not anchors:
+            continue
+
+        ordered = sorted(anchors.items(), key=lambda item: item[1])
+        starts = [y for _, y in ordered]
+        # 题号缺失时按页内顺序兜底匹配
+        page_questions = sorted(page_questions, key=lambda q: int(q.get("no") or 0))
+        fallback = None
+        if len(page_questions) == len(ordered):
+            fallback = {
+                int(q.get("no") or 0): ordered[i][1]
+                for i, q in enumerate(page_questions)
+            }
+
+        for q in page_questions:
+            no = int(q.get("no") or 0)
+            start = anchors.get(no, (fallback or {}).get(no))
+            if start is None:
+                continue
+            later = [y for y in starts if y > start + 2]
+            end = min(later) - 4 if later else page.rect.height - 22
+            if end - start < 30:
+                continue
+            clip = pymupdf.Rect(
+                max(4, 8),
+                max(4, start - 7),
+                page.rect.width - 8,
+                min(page.rect.height - 4, end),
+            )
+            try:
+                pix = page.get_pixmap(clip=clip, dpi=180)
+                name = f"q{no}.png"
+                pix.save(os.path.join(out_dir, name))
+                q["figures"] = [name]
+                cropped += 1
+            except Exception as exc:
+                print(f"[套卷] 裁剪第 {no} 题配图失败：{exc}")
+    return cropped
 
 
 def extract_pdf_pages_text(content: bytes) -> list[str]:
@@ -968,6 +1132,18 @@ async def generate_paper(paper_id: int) -> None:
                                 f"结构化完成，共 {len(questions)} 题（去重合并后）")
 
             real_total = _rescale_scores(questions, paper.total_score or 100)
+
+            if ext == "pdf":
+                await _set_progress(db, paper, 90, "自动切割题目配图",
+                                    "正在按题号裁剪原卷配图")
+                try:
+                    cropped = await asyncio.to_thread(
+                        crop_question_images, paper.id, content, questions)
+                    if cropped:
+                        await _set_progress(db, paper, 92, "配图切割完成",
+                                            f"已裁剪 {cropped} 道题的配图")
+                except Exception as exc:
+                    print(f"[套卷] 自动切割配图失败，回退整页图：{exc}")
 
             await save_questions(db, paper, questions)
             await _set_progress(db, paper, 94, "写入题库", f"题目已入库，总分 {real_total}")

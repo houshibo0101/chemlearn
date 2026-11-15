@@ -328,9 +328,20 @@ function renderList() {
         '" placeholder="在这里写你的答案（填空/计算/简答）" rows="2"></textarea>';
     }
 
-    // 需要看图的题：附上原卷对应页（文字抽取拿不到装置图/曲线图）
+    // 需要看图的题：优先显示自动裁剪的本题配图，裁剪失败再回退整页
     let figHtml = '';
-    if (q.has_figure && q.page) {
+    if (q.figures && q.figures.length) {
+      figHtml =
+        '<div class="fig">' +
+          q.figures.map(function (name) {
+            const src = 'figimg/' + encodeURIComponent(name);
+            return '<a href="' + src + '" target="_blank" title="点击查看大图">' +
+              '<img src="' + src + '" alt="第 ' + q.no + ' 题配图" loading="lazy">' +
+              '</a>';
+          }).join('') +
+          '<div class="fig__tip">本题原题截图（自动切割，含题干与配图；点击放大）</div>' +
+        '</div>';
+    } else if (q.has_figure && q.page) {
       const src = 'pageimg/' + q.page;
       figHtml =
         '<div class="fig">' +

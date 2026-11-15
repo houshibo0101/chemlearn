@@ -277,6 +277,17 @@ async def page_image(paper_id: int, page_no: int):
     return FileResponse(path, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
 
+@router.get("/{paper_id}/figimg/{filename}", summary="自动切割的题目配图")
+async def figure_image(paper_id: int, filename: str):
+    if not (filename.startswith("q") and filename.endswith(".png")
+            and filename[1:-4].isdigit()):
+        raise HTTPException(status_code=404, detail="配图不存在")
+    path = paper_service.figure_image_path(paper_id, filename)
+    if not os.path.isfile(path):
+        raise HTTPException(status_code=404, detail="配图不存在")
+    return FileResponse(path, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+
+
 @router.get("/{paper_id}/questions", summary="套卷题目明细（校对答案用）")
 async def paper_questions(
     paper_id: int,
