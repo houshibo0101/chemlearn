@@ -49,7 +49,8 @@
           <el-menu-item index="/matching/manage"><el-icon><SetUp /></el-icon><span>连连看管理</span></el-menu-item>
           <el-menu-item index="/teacher/classes"><el-icon><School /></el-icon><span>班级管理</span></el-menu-item>
           <el-menu-item index="/admin/questions"><el-icon><Setting /></el-icon><span>题库管理</span></el-menu-item>
-          <el-menu-item index="/admin/users"><el-icon><UserFilled /></el-icon><span>账号管理</span></el-menu-item>
+          <el-menu-item v-if="adminPortal" index="/admin/dashboard"><el-icon><DataLine /></el-icon><span>数据看板</span></el-menu-item>
+          <el-menu-item v-if="adminPortal" index="/admin/users"><el-icon><UserFilled /></el-icon><span>账号管理</span></el-menu-item>
           <el-menu-item index="/report"><el-icon><DataLine /></el-icon><span>学习报告</span></el-menu-item>
         </template>
         <el-menu-item index="/notifications">
@@ -157,7 +158,7 @@
           <div class="mobile-tabbar-item" :class="{active: route.path==='/admin/questions'}" @click="$router.push('/admin/questions')">
             <el-icon><Upload /></el-icon><span>题库</span>
           </div>
-          <div class="mobile-tabbar-item" :class="{active: route.path==='/admin/users'}" @click="$router.push('/admin/users')">
+          <div v-if="adminPortal" class="mobile-tabbar-item" :class="{active: route.path==='/admin/users'}" @click="$router.push('/admin/users')">
             <el-icon><UserFilled /></el-icon><span>用户</span>
           </div>
           <div class="mobile-tabbar-item" :class="{active: route.path==='/profile'}" @click="$router.push('/profile')">
@@ -186,6 +187,7 @@ const userStore = useUserStore()
 const isDesktop = ref(window.innerWidth >= 768)
 const isPublicPage = computed(() => route.path === '/login' || route.path === '/register')
 const isDark = ref(getTheme() === 'dark')
+const adminPortal = ref(sessionStorage.getItem('adminPortal') === '1')
 const showBugReport = ref(false)
 
 // ===== 未读通知轮询 =====

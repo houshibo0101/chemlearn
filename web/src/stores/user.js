@@ -43,6 +43,7 @@ export const useUserStore = defineStore('user', {
       this.user = null
       localStorage.removeItem('token')
       localStorage.removeItem('user')
+      sessionStorage.removeItem('adminPortal')
     },
   },
 })

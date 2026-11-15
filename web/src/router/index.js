@@ -63,6 +63,11 @@ router.beforeEach((to, from, next) => {
     next('/')
     return
   }
+  // 管理员后台只能从隐藏入口 /chem/admin/T 登录后进入
+  if (to.meta.admin && sessionStorage.getItem('adminPortal') !== '1') {
+    next('/')
+    return
+  }
   // 老师权限检查
   if (to.meta.teacher && store.user?.role !== 'teacher' && !store.isAdmin) {
     next('/')

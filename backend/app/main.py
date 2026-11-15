@@ -221,9 +221,113 @@ async def health():
     }
 
 
+# ========== 隐藏管理员入口 ==========
+_ADMIN_PORTAL_HTML = r"""<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>管理后台登录</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+         font-family: 'Microsoft YaHei', system-ui, sans-serif;
+         background: radial-gradient(circle at 20% 20%, #312e81, #0f172a 65%); color: #e2e8f0; }
+  .card { width: min(420px, 92vw); background: rgba(15,23,42,.82); border: 1px solid rgba(148,163,184,.25);
+          border-radius: 18px; padding: 32px 30px; box-shadow: 0 30px 80px rgba(0,0,0,.45); }
+  h1 { margin: 0 0 6px; font-size: 22px; color: #fff; }
+  .sub { margin: 0 0 24px; font-size: 13px; color: #94a3b8; }
+  label { display: block; font-size: 13px; color: #cbd5e1; margin: 14px 0 6px; }
+  input { width: 100%; padding: 12px 13px; border-radius: 10px; border: 1px solid #334155;
+          background: #0f172a; color: #f8fafc; font-size: 14px; outline: none; }
+  input:focus { border-color: #818cf8; box-shadow: 0 0 0 3px rgba(129,140,248,.18); }
+  button { width: 100%; margin-top: 22px; padding: 12px; border: 0; border-radius: 10px;
+           background: #6366f1; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; }
+  button:disabled { opacity: .6; cursor: wait; }
+  #msg { min-height: 20px; margin-top: 14px; font-size: 13px; color: #fca5a5; text-align: center; }
+  .foot { margin-top: 18px; font-size: 11px; color: #64748b; text-align: center; }
+</style>
+</head>
+<body>
+  <form class="card" id="loginForm">
+    <h1>ChemLearn 管理后台</h1>
+    <p class="sub">仅管理员可进入 · 请使用管理员账号登录</p>
+    <label for="username">管理员账号</label>
+    <input id="username" autocomplete="username" required>
+    <label for="password">密码</label>
+    <input id="password" type="password" autocomplete="current-password" required>
+    <button id="submitBtn" type="submit">进入后台</button>
+    <div id="msg"></div>
+    <div class="foot">此入口不对外公开</div>
+  </form>
+<script>
+(function () {
+  var API = '/chem/api/v1';
+  var DASH = '/chem/app/admin/dashboard';
+  var form = document.getElementById('loginForm');
+  var msg = document.getElementById('msg');
+  var btn = document.getElementById('submitBtn');
+
+  // 同一标签页已通过隐藏入口进入，可以直接进；否则必须重新验证
+  if (sessionStorage.getItem('adminPortal') === '1' && localStorage.getItem('token')) {
+    location.replace(DASH);
+    return;
+  }
+
+  form.addEventListener('submit', async function (event) {
+    event.preventDefault();
+    msg.textContent = '';
+    var username = document.getElementById('username').value.trim();
+    var password = document.getElementById('password').value;
+    if (!username || !password) {
+      msg.textContent = '请输入管理员账号和密码';
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = '验证中…';
+    try {
+      var resp = await fetch(API + '/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username, password: password }),
+      });
+      var data = await resp.json().catch(function () { return {}; });
+      if (!resp.ok) {
+        msg.textContent = data.detail || '登录失败';
+        return;
+      }
+      if (!data.user || data.user.role !== 'admin') {
+        msg.textContent = '该账号不是管理员，无法进入后台';
+        return;
+      }
+      localStorage.setItem('token', data.access_token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      sessionStorage.setItem('adminPortal', '1');
+      location.replace(DASH);
+    } catch (e) {
+      msg.textContent = '网络错误，请稍后重试';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '进入后台';
+    }
+  });
+})();
+</script>
+</body>
+</html>
+"""
+
+
+@app.get("/admin/T", include_in_schema=False)
+@app.get("/admin/T/", include_in_schema=False)
+async def admin_portal():
+    return HTMLResponse(_ADMIN_PORTAL_HTML, headers={"X-Robots-Tag": "noindex, nofollow"})
+
+
 # ========== 静态文件挂载（官网 + 前端页面 + 上传文件） ==========
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, HTMLResponse
 import os
 
 _site_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "site")
