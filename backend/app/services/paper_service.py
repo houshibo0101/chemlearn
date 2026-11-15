@@ -413,7 +413,8 @@ AI_PROMPT = """把下面这段化学试卷文本转成 JSON，只输出 JSON 本
     "score": 3,
     "knowledge_point": "知识点",
     "page": 3,
-    "has_figure": false
+    "has_figure": false,
+    "sub_questions": []
   }}
 ]}}
 
@@ -428,6 +429,7 @@ AI_PROMPT = """把下面这段化学试卷文本转成 JSON，只输出 JSON 本
 8. 题目编号尽量沿用原文的题号
 9. page：该题所在的页码，取自文本里的【第N页】标记，取不到就填 1
 10. has_figure：题目需要看图形才能作答（装置图、流程图、曲线图、表格、结构式）时为 true，纯文字题 false
+11. sub_questions：填空/计算/简答题如果有多个小问，拆成 [{{"content":"(1)…","answer":"参考答案","score":2}}]；没有小问给 []，此时用题目自身的 answer/score
 
 试卷名：{title}
 整卷总分：{total_score} 分
@@ -566,6 +568,31 @@ def _clean_text(s) -> str:
     return re.sub(r"\\([%_()^&{}$#\s])", r"\1", str(s))
 
 
+def _clean_sub_questions(raw) -> list:
+    """小问：[{id,content,answer,score}]，用于填空/计算/简答。"""
+    if not isinstance(raw, list):
+        return []
+    out = []
+    for i, item in enumerate(raw):
+        if not isinstance(item, dict):
+            continue
+        content = _clean_text(item.get("content")).strip()
+        answer = _clean_text(item.get("answer")).strip()
+        try:
+            score = max(0, int(float(item.get("score") or 0)))
+        except (TypeError, ValueError):
+            score = 0
+        if not content and not answer:
+            continue
+        out.append({
+            "id": i + 1,
+            "content": content,
+            "answer": answer,
+            "score": score,
+        })
+    return out
+
+
 def normalize_question(q: dict, fallback_no: int) -> dict | None:
     if not isinstance(q, dict):
         return None
@@ -612,6 +639,7 @@ def normalize_question(q: dict, fallback_no: int) -> dict | None:
         "score": score,
         "knowledge_point": _clean_text(q.get("knowledge_point")).strip(),
         "page": max(1, page),
+        "sub_questions": _clean_sub_questions(q.get("sub_questions")),
         "has_figure": bool(q.get("has_figure")),
     }
 
@@ -707,6 +735,10 @@ async def save_questions(db, paper: Paper, questions: list[dict]) -> None:
             existed.options = json.dumps(q["options"], ensure_ascii=False) if q["options"] else None
             existed.answer = q["answer"] or "—"
             existed.analysis = q["analysis"]
+            existed.sub_questions = (
+                json.dumps(q.get("sub_questions"), ensure_ascii=False)
+                if q.get("sub_questions") else None
+            )
             existed.source = f"套卷《{paper.title}》第 {q['no']} 题"
             q["question_id"] = existed.id
         else:
@@ -721,6 +753,10 @@ async def save_questions(db, paper: Paper, questions: list[dict]) -> None:
                 options=json.dumps(q["options"], ensure_ascii=False) if q["options"] else None,
                 answer=q["answer"] or "—",
                 analysis=q["analysis"],
+                sub_questions=(
+                    json.dumps(q.get("sub_questions"), ensure_ascii=False)
+                    if q.get("sub_questions") else None
+                ),
                 source=f"套卷《{paper.title}》第 {q['no']} 题",
                 creator_id=paper.uploader_id,
             )
@@ -849,6 +885,9 @@ async def ai_grade_subjective(paper: Paper, answers: dict) -> dict:
     for q in (paper.questions_json or []):
         if q.get("type") in ("single", "multiple"):
             continue
+        if q.get("sub_questions"):
+            # 小问按结构化答案逐项规则判分，不拼成一段交给 AI
+            continue
         if not (q.get("answer") or "").strip():
             continue
         mine = str(answers.get(str(q.get("no")), "") or "").strip()
@@ -918,7 +957,6 @@ async def judge(paper: Paper, answers: dict, self_judge: dict | None = None) -> 
 
     # 主观题先让 AI 判（一次请求判完），失败则空字典走规则
     ai_grades = await ai_grade_subjective(paper, answers)
-
     score = 0
     right = wrong = 0
     gradable_total = 0
@@ -928,7 +966,71 @@ async def judge(paper: Paper, answers: dict, self_judge: dict | None = None) -> 
 
     for q in questions:
         no = str(q.get("no"))
-        mine = str(answers.get(no, "") or "")
+        raw_mine = answers.get(no, "")
+        subs = q.get("sub_questions") or []
+
+        # 多小问：每个小问独立比对、独立得分，总分为小问得分之和
+        if subs:
+            full = sum(int(s.get("score") or 0) for s in subs) or int(q.get("score") or 0)
+            mine_obj = raw_mine if isinstance(raw_mine, dict) else {}
+            sub_results = []
+            earned = 0
+            any_answer = False
+            all_ok = True
+            for idx, sub in enumerate(subs):
+                ans = str(
+                    mine_obj.get(str(idx))
+                    or mine_obj.get(str(sub.get("id")))
+                    or ""
+                ).strip()
+                std = str(sub.get("answer") or "").strip()
+                sub_score = max(0, int(sub.get("score") or 0))
+                if ans:
+                    any_answer = True
+                ok = bool(ans and std and _loose_equal(ans, std))
+                if ok:
+                    earned += sub_score
+                else:
+                    all_ok = False
+                sub_results.append({
+                    "id": sub.get("id") or idx + 1,
+                    "mine": ans,
+                    "answer": std,
+                    "ok": ok,
+                    "score": sub_score,
+                    "earned": sub_score if ok else 0,
+                })
+            gradable_total += full
+            if not any_answer:
+                ok = False
+                reason = "未作答"
+            elif all_ok:
+                ok = True
+                reason = "各小问均正确"
+            else:
+                ok = False
+                correct_subs = sum(1 for s in sub_results if s["ok"])
+                reason = f"小问答对 {correct_subs}/{len(sub_results)}"
+            score += earned
+            if ok:
+                right += 1
+            else:
+                wrong += 1
+            details.append({
+                "no": q.get("no"),
+                "ok": ok,
+                "mine": mine_obj,
+                "answer": "；".join(s["answer"] for s in sub_results if s["answer"]),
+                "score": full,
+                "earned": earned,
+                "question_id": q.get("question_id"),
+                "reason": reason,
+                "source": "rule",
+                "sub_results": sub_results,
+            })
+            continue
+
+        mine = str(raw_mine or "")
         qtype = q.get("type")
         full = int(q.get("score") or 0)
         has_answer = bool((q.get("answer") or "").strip())
@@ -1011,6 +1113,13 @@ async def sync_records(db, paper: Paper, user_id: int, result: dict, duration_se
         if not qid:
             continue
         q = questions.get(str(d["no"])) or {}
+        mine = d.get("mine")
+        if isinstance(mine, dict):
+            mine = json.dumps(mine, ensure_ascii=False)
+        mine = str(mine or "")
+        earned = d.get("earned")
+        if earned is None:
+            earned = d["score"] if d.get("ok") else 0
 
         # 练习记录（只记判过的题，避免把"待自评"算进正确率）
         if d.get("ok") is not None:
@@ -1018,9 +1127,9 @@ async def sync_records(db, paper: Paper, user_id: int, result: dict, duration_se
                 user_id=user_id,
                 question_id=qid,
                 source="paper",
-                user_answer=d.get("mine") or "",
+                user_answer=mine,
                 is_correct=bool(d.get("ok")),
-                score=d["score"] if d.get("ok") else 0,
+                score=earned,
                 total_score=d["score"],
                 time_spent=None,
                 submitted_at=now,
@@ -1036,14 +1145,14 @@ async def sync_records(db, paper: Paper, user_id: int, result: dict, duration_se
             )).scalar_one_or_none()
             if row:
                 row.wrong_count = (row.wrong_count or 1) + 1
-                row.user_answer = d.get("mine") or ""
+                row.user_answer = mine
                 row.last_wrong_at = now
             else:
                 db.add(WrongQuestion(
                     user_id=user_id,
                     question_id=qid,
                     wrong_count=1,
-                    user_answer=d.get("mine") or "",
+                    user_answer=mine,
                     last_wrong_at=now,
                 ))
 

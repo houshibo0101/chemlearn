@@ -30,7 +30,7 @@
           placeholder="图表说明、材料等，可空"
         />
       </el-form-item>
-      <el-form-item v-if="form.type === 'single' || form.type === 'multiple'" label="选项">
+      <el-form-item v-if="isChoice" label="选项">
         <div class="option-list">
           <div v-for="(opt, i) in form.options" :key="i" class="option-row">
             <el-input v-model="opt.key" class="option-key" maxlength="2" placeholder="A" />
@@ -38,6 +38,25 @@
             <el-button link type="danger" @click="removeOption(i)">删除</el-button>
           </div>
           <el-button size="small" plain @click="addOption">+ 添加选项</el-button>
+        </div>
+      </el-form-item>
+      <el-form-item v-if="!isChoice" label="小问">
+        <div class="sub-editor">
+          <div v-for="(sub, i) in form.sub_questions" :key="i" class="sub-row">
+            <div class="sub-row__head">
+              <span>第 {{ i + 1 }} 小问</span>
+              <el-button link type="danger" size="small" @click="removeSub(i)">删除</el-button>
+            </div>
+            <el-input v-model="sub.content" type="textarea" :rows="2" placeholder="小问内容，例如 (1) 写出…" />
+            <div class="sub-row__bottom">
+              <el-input v-model="sub.answer" placeholder="该小问参考答案" />
+              <el-input-number v-model="sub.score" :min="0" :max="100" size="small" />
+            </div>
+          </div>
+          <div class="sub-actions">
+            <el-button size="small" plain @click="addSub">+ 添加小问</el-button>
+            <span v-if="form.sub_questions.length" class="sub-total">小问合计 {{ subTotal }} 分</span>
+          </div>
         </div>
       </el-form-item>
       <el-form-item label="标准答案">
@@ -64,7 +83,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import api from '@/api'
 
@@ -75,6 +94,9 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue', 'saved'])
 const saving = ref(false)
+const isChoice = computed(() => form.type === 'single' || form.type === 'multiple')
+const subTotal = computed(() =>
+  form.sub_questions.reduce((sum, sub) => sum + Number(sub.score || 0), 0))
 
 const form = reactive({
   no: 0,
@@ -82,6 +104,7 @@ const form = reactive({
   title: '',
   content: '',
   options: [],
+  sub_questions: [],
   answer: '',
   analysis: '',
   score: 5,
@@ -105,6 +128,12 @@ const loadFromQuestion = () => {
   form.options = opts.length
     ? opts.map((o) => ({ key: String(o.key || ''), text: String(o.text || '') }))
     : defaultOptions()
+  const subs = Array.isArray(q.sub_questions) ? q.sub_questions : []
+  form.sub_questions = subs.map((s) => ({
+    content: String(s.content || ''),
+    answer: String(s.answer || ''),
+    score: Number(s.score || 0),
+  }))
   form.answer = q.answer || ''
   form.analysis = q.analysis || ''
   form.score = q.score || 0
@@ -123,6 +152,12 @@ const addOption = () => {
 const removeOption = (index) => {
   form.options.splice(index, 1)
 }
+const addSub = () => {
+  form.sub_questions.push({ content: '', answer: '', score: 2 })
+}
+const removeSub = (index) => {
+  form.sub_questions.splice(index, 1)
+}
 
 const save = async () => {
   if (!form.title.trim()) {
@@ -132,14 +167,24 @@ const save = async () => {
   if (!props.paperId || !form.no) return
   saving.value = true
   try {
+    const subs = isChoice.value
+      ? []
+      : form.sub_questions
+        .filter((s) => String(s.content || '').trim() || String(s.answer || '').trim())
+        .map((s) => ({
+          content: String(s.content || '').trim(),
+          answer: String(s.answer || '').trim(),
+          score: Number(s.score || 0),
+        }))
     const res = await api.patch(`/papers/${props.paperId}/questions/${form.no}`, {
       type: form.type,
       title: form.title.trim(),
       content: form.content,
       options: form.options,
+      sub_questions: subs,
       answer: form.answer,
       analysis: form.analysis,
-      score: form.score,
+      score: subs.length ? subs.reduce((sum, s) => sum + s.score, 0) : form.score,
       knowledge_point: form.knowledge_point,
     })
     ElMessage.success(`第 ${form.no} 题已保存，做题页已更新`)
@@ -162,4 +207,27 @@ watch(() => props.modelValue, (visible) => {
 .option-row { display: flex; align-items: center; gap: 6px; }
 .option-key { width: 54px; flex: none; }
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.sub-editor { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.sub-row {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--bg-tertiary);
+}
+.sub-row__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.sub-row__bottom {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+.sub-row__bottom .el-input { flex: 1; }
+.sub-actions { display: flex; align-items: center; gap: 12px; }
+.sub-total { color: var(--text-placeholder); font-size: 12px; }
 </style>

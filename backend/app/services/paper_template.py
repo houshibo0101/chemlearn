@@ -136,6 +136,26 @@ TEMPLATE = r"""<!DOCTYPE html>
   }
   .blank:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(79,70,229,.12); }
 
+  /* 填空题的多个小问 */
+  .sub-list { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
+  .sub-q {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: #fafbff;
+  }
+  .sub-q__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .sub-q__no { color: var(--brand); font-weight: 600; font-size: 13px; }
+  .sub-q__score { color: var(--text-3); font-size: 12px; }
+  .sub-q__content { color: var(--text-1); font-size: 14px; line-height: 1.7; margin-bottom: 6px; white-space: pre-wrap; }
+  .sub-q .blank { margin-top: 4px; }
+
   /* 原卷配图 */
   .fig { margin-top: 12px; }
   .fig img {
@@ -350,12 +370,20 @@ function renderNav() {
   });
 }
 
+function hasAnswer(value) {
+  if (value == null) return false;
+  if (typeof value === 'object') {
+    return Object.values(value).some((v) => String(v == null ? '' : v).trim());
+  }
+  return String(value).trim().length > 0;
+}
+
 function updateNav() {
   document.querySelectorAll('.nav a').forEach((a) => {
     const no = a.dataset.no;
-    a.classList.toggle('done', !!(state.answers[no] && String(state.answers[no]).trim()));
+    a.classList.toggle('done', hasAnswer(state.answers[no]));
   });
-  const done = Object.values(state.answers).filter((v) => v && String(v).trim()).length;
+  const done = Object.values(state.answers).filter(hasAnswer).length;
   $('doneCount').textContent = done;
 }
 
@@ -377,8 +405,24 @@ function renderList() {
     }
     let blankHtml = '';
     if (!q.options || !q.options.length) {
-      blankHtml = '<textarea class="blank" data-no="' + q.no +
-        '" placeholder="在这里写你的答案（填空/计算/简答）" rows="2"></textarea>';
+      const subs = q.sub_questions || [];
+      if (subs.length) {
+        blankHtml = '<div class="sub-list">' + subs.map(function (sub, i) {
+          const label = sub.id || (i + 1);
+          return '<div class="sub-q">' +
+            '<div class="sub-q__head">' +
+              '<span class="sub-q__no">第 ' + label + ' 小问</span>' +
+              '<span class="sub-q__score">' + (sub.score || 0) + ' 分</span>' +
+            '</div>' +
+            (sub.content ? '<div class="sub-q__content">' + esc(sub.content) + '</div>' : '') +
+            '<textarea class="blank sub-blank" data-no="' + q.no + '" data-sub="' + i +
+              '" placeholder="第 ' + label + ' 小问答案" rows="2"></textarea>' +
+          '</div>';
+        }).join('') + '</div>';
+      } else {
+        blankHtml = '<textarea class="blank" data-no="' + q.no +
+          '" placeholder="在这里写你的答案（填空/计算/简答）" rows="2"></textarea>';
+      }
     }
 
     // 需要看图的题：优先显示自动裁剪的本题配图，裁剪失败再回退整页
@@ -439,11 +483,20 @@ function renderList() {
     };
   });
 
-  // 填空输入
+  // 填空输入（含多个小问）
   document.querySelectorAll('.blank').forEach((el) => {
     el.oninput = () => {
       if (state.finished) return;
-      state.answers[el.dataset.no] = el.value;
+      const no = el.dataset.no;
+      const sub = el.dataset.sub;
+      if (sub !== undefined) {
+        if (!state.answers[no] || typeof state.answers[no] !== 'object') {
+          state.answers[no] = {};
+        }
+        state.answers[no][sub] = el.value;
+      } else {
+        state.answers[no] = el.value;
+      }
       updateNav();
     };
   });
@@ -561,7 +614,7 @@ function localJudge() {
 async function submit(auto) {
   if (state.finished) return;
   if (!auto) {
-    const done = Object.values(state.answers).filter((v) => v && String(v).trim()).length;
+    const done = Object.values(state.answers).filter(hasAnswer).length;
     if (done < PAPER.questions.length && !confirm('还有 ' + (PAPER.questions.length - done) + ' 题没答，确定交卷？')) return;
   }
   state.finished = true;
@@ -641,10 +694,21 @@ function showResult(d, used) {
         else if ((state.answers[item.no] || '').includes(k)) o.classList.add('mistake');
       });
     }
+    const mineIsObj = item.mine && typeof item.mine === 'object';
+    const mineText = mineIsObj
+      ? Object.values(item.mine).filter((v) => String(v || '').trim()).map((v) => esc(v)).join('；') || '未作答'
+      : (hasAnswer(item.mine) ? esc(String(item.mine)) : '未作答');
+    const subHtml = (item.sub_results || []).map(function (sub, i) {
+      return '<div class="ans__row">第 ' + (sub.id || (i + 1)) + ' 小问：' +
+        (sub.mine ? esc(sub.mine) : '未作答') +
+        (sub.ok ? ' <span class="ok">✓</span>' : ' <span class="no">✗</span>') +
+        ' <span style="color:var(--text-3);font-size:12px;">得分 ' + (sub.earned || 0) + '/' + (sub.score || 0) + '</span></div>';
+    }).join('');
     $('ans' + item.no).innerHTML =
       '<div class="ans">' +
         '<div class="ans__row">你的答案：<b class="' + (item.ok === true ? 'ok' : item.ok === false ? 'no' : '') + '">' +
-          (item.mine ? esc(item.mine) : '未作答') + '</b></div>' +
+          mineText + '</b></div>' +
+        subHtml +
         '<div class="ans__row">正确答案：<b class="ok">' + esc(item.answer || '—') + '</b></div>' +
         (q.analysis ? '<div class="ans__row">解析：' + esc(q.analysis) + '</div>' : '') +
         (item.reason ? '<div class="ans__row ans__reason">判分说明：' + esc(item.reason) + '</div>' : '') +

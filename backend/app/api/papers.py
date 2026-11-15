@@ -326,6 +326,7 @@ async def paper_questions(
             "has_figure": q.get("has_figure"),
             "figures": q.get("figures") or [],
             "knowledge_point": q.get("knowledge_point") or "",
+            "sub_questions": q.get("sub_questions") or [],
         } for q in (paper.questions_json or [])],
     }
 
@@ -380,6 +381,33 @@ async def update_question(
                 cleaned.append({"key": key, "text": text})
         target["options"] = cleaned
 
+    if "sub_questions" in payload:
+        raw_subs = payload.get("sub_questions") or []
+        if isinstance(raw_subs, str):
+            try:
+                raw_subs = json.loads(raw_subs)
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail="小问格式不合法")
+        if not isinstance(raw_subs, list):
+            raise HTTPException(status_code=400, detail="小问必须是数组")
+        subs = []
+        for idx, sub in enumerate(raw_subs):
+            if not isinstance(sub, dict):
+                continue
+            content = str(sub.get("content") or "").strip()
+            answer = str(sub.get("answer") or "").strip()
+            if not content and not answer:
+                continue
+            try:
+                sub_score = max(0, int(sub.get("score") or 0))
+            except (TypeError, ValueError):
+                sub_score = 0
+            subs.append({"id": idx + 1, "content": content, "answer": answer, "score": sub_score})
+        target["sub_questions"] = subs
+        if subs:
+            target["score"] = sum(s["score"] for s in subs)
+            target["answer"] = "；".join(s["answer"] for s in subs if s["answer"]) or target.get("answer", "")
+
     if not (target.get("title") or "").strip():
         raise HTTPException(status_code=400, detail="题干不能为空")
 
@@ -408,6 +436,8 @@ async def update_question(
                 target.get("type"), row.question_type)
             options = target.get("options") or []
             row.options = json.dumps(options, ensure_ascii=False) if options else None
+            subs = target.get("sub_questions") or []
+            row.sub_questions = json.dumps(subs, ensure_ascii=False) if subs else None
 
     # 重新渲染做题页（分值/答案会显示在页面上）
     paper.html_path = paper_service.write_html(
