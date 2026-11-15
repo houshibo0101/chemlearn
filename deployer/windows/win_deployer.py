@@ -16,7 +16,7 @@
     ChemLearnWindows.exe --reset            重新部署（清空用户数据，恢复内置题库）
     ChemLearnWindows.exe --console          纯命令行模式（排障用，窗口里能看到日志）
 """
-VERSION = "2.1.35"
+VERSION = "2.1.36"
 APP_NAME = "化学学习系统"
 DATA_FOLDER = "ChemLearnWindows"
 PAYLOAD_NAME = "payload_chem.tar.gz"
@@ -890,7 +890,6 @@ class DeployerApp:
         self.log("  本机访问：  " + local)
         if lan:
             self.log("  局域网访问：" + lan)
-        self.log("  管理账号：  admin / admin123（登录后请及时修改密码）")
         self.log("  数据目录：  " + DATA_ROOT)
         self.log("  停止服务：  点“停止服务”或直接关闭本窗口")
         self.log("=" * 58)
@@ -1209,7 +1208,6 @@ def run_console(args):
     print("  本机访问：  " + local)
     if lan:
         print("  局域网访问：" + lan)
-    print("  管理账号：  admin / admin123（登录后请修改密码）")
     print("  数据目录：  " + DATA_ROOT)
     print("  停止服务：  Ctrl+C")
     print("=" * 60)

@@ -34,7 +34,7 @@
 | 文件 | 平台 | 说明 |
 |---|---|---|
 | [ChemLearn-Deployer-v1.3.0.exe](https://github.com/houshibo0101/chemlearn/releases/tag/v1.3.0) | Linux 服务器 | 填 IP、SSH 密码和 AI Key，自动装好 nginx / Python / systemd，3–6 分钟完成 |
-| [ChemLearnWindows-v2.1.35.exe](https://github.com/houshibo0101/chemlearn/releases/tag/windows-v2.1.35) | Windows 本机 | 双击部署到本机，界面里看地址 / 开系统 / 重置，局域网可访问 |
+| [ChemLearnWindows-v2.1.36.exe](https://github.com/houshibo0101/chemlearn/releases/tag/windows-v2.1.36) | Windows 本机 | 双击部署到本机，界面里看地址 / 开系统 / 重置，局域网可访问 |
 | [题库数据包 453 题](https://github.com/houshibo0101/chemlearn/releases/tag/question-bank-v1) | 通用 | 解压到 `backend/import_data/` 后跑导入脚本 |
 
 > Linux 部署器内置完整部署包（源码 + 前端 + 依赖清单），目标机只需能联网的 Ubuntu / Debian。
@@ -154,7 +154,7 @@ uvicorn app.main:app --reload --port 8000
 
 - 接口文档 <http://127.0.0.1:8000/api/docs>（ReDoc：`/api/redoc`，OpenAPI：`/api/openapi.json`）
 - 健康检查 <http://127.0.0.1:8000/api/health>
-- 首次启动会自动建表并创建管理员 **admin / admin123**
+- 首次启动会自动建表并创建独立管理员账号（不在普通账户列表中显示）
 
 ### 邮箱验证码（注册）
 
@@ -264,7 +264,7 @@ deployer/windows/.buildenv/Scripts/python deployer/windows/build_win.py --with-p
 - 「设置…」里可选填：邮件 SMTP（注册验证码）、AI API 地址/Key、上传文件目录；全部可留空
 - 换新 exe 直接双击即可升级，程序会更新而数据库保留；`--reset` 才清空数据
 - 内置 4 套化学连连看示例关卡，装好即可直接玩
-- 默认账号 `admin / admin123`，登录后请到个人中心修改
+- 管理员账号为独立账号，不在普通账户列表和部署提示中显示
 
 详细操作、防火墙设置、备份与卸载见 [`deployer/windows/使用说明.txt`](deployer/windows/使用说明.txt)。
 
@@ -279,12 +279,13 @@ deployer/windows/.buildenv/Scripts/python deployer/windows/build_win.py --with-p
 
 ![Windows 部署器](docs/deployer-windows.png)
 
-## 默认账号与安全提醒
+## 账号与安全提醒
 
 > **本仓库是学习与工程实践项目，默认配置不可直接用于生产。**
 
-- 默认管理员：`admin / admin123`；新建用户与重置密码的默认值为 `111111`。
-  上线前请在 `.env` 中设置 `ADMIN_PASSWORD`，并修改 `app/api/admin_users.py` 中的默认密码。
+- 管理员账号独立于普通账户：不出现在账号管理列表、不计入用户统计、部署界面不提示。
+  上线前请在 `.env` 中设置 `ADMIN_USERNAME` / `ADMIN_PASSWORD`。
+- 新建用户与重置密码的默认值为 `111111`，请提醒用户首次登录后修改。
 - `.env.example` 里的 `SECRET_KEY` 是占位值。当 `DEBUG=false` 时后端会拒绝使用默认
   `SECRET_KEY` / `ADMIN_PASSWORD` 启动（见 `app/core/config.py` 的启动校验）。
 - AI Key、SMTP 密码等敏感项一律通过环境变量注入，不要写进代码。

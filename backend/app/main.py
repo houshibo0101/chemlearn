@@ -39,9 +39,7 @@ async def ensure_admin():
             )
             db.add(admin)
             await db.commit()
-            print(f"[初始化] 内置管理员账号已创建: {settings.ADMIN_USERNAME} / {settings.ADMIN_PASSWORD}")
-        else:
-            print(f"[初始化] 内置管理员账号已存在: {settings.ADMIN_USERNAME}")
+            print("[初始化] 内置管理员账号已就绪")
         return admin
 
 
@@ -173,7 +171,6 @@ async def root():
         "version": "1.0.0",
         "docs": "/docs",
         "api_prefix": prefix,
-        "admin_default": "admin / admin123",
     }
 
 

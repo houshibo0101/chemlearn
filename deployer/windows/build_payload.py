@@ -205,8 +205,8 @@ def main():
           % (stats["questions"], stats["questions_with_images"]))
     print("  连连看    %d 套关卡 / %d 对（作答记录已清空）"
           % (stats["matching_sets"], stats["matching_pairs"]))
-    print("  账号      %d -> %d（%s）"
-          % (stats["users_before"], stats["users_after"], stats["admin"]))
+    print("  账号      %d -> %d"
+          % (stats["users_before"], stats["users_after"]))
     print("  清理行数  %d" % stats["rows_removed"])
     if stats["questions_with_images"]:
         print("  注意：题库引用了图片，但上传目录不随包分发，"

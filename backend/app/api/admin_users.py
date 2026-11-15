@@ -26,8 +26,8 @@ async def list_users(
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_admin),
 ):
-    stmt = select(User)
-    count_stmt = select(func.count(User.id))
+    stmt = select(User).where(User.role != UserRole.ADMIN)
+    count_stmt = select(func.count(User.id)).where(User.role != UserRole.ADMIN)
     if keyword:
         like = f"%{keyword}%"
         stmt = stmt.where(User.username.like(like) | User.full_name.like(like))
@@ -407,9 +407,11 @@ async def admin_stats(
     # Token 统计
     token_usage = await AIService.get_token_usage(db)
     # 用户统计
-    total_users = (await db.execute(select(func.count(User.id)))).scalar()
+    total_users = (await db.execute(
+        select(func.count(User.id)).where(User.role != UserRole.ADMIN)
+    )).scalar()
     student_count = (await db.execute(select(func.count(User.id)).where(User.role == UserRole.STUDENT))).scalar()
-    admin_count = (await db.execute(select(func.count(User.id)).where(User.role == UserRole.ADMIN))).scalar()
+    admin_count = 0  # 管理员是独立隐藏账号，不计入普通账户统计
     # 题目统计
     total_questions = (await db.execute(select(func.count(Question.id)))).scalar()
     # 错题统计
