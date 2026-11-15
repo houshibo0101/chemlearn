@@ -218,8 +218,6 @@ async def login(data: UserLogin, request: Request, db: AsyncSession = Depends(ge
         raise HTTPException(status_code=401, detail=f"用户名或密码错误，剩余尝试次数：{remaining - 1}")
     if not user.is_active:
         raise HTTPException(status_code=403, detail="账号已被禁用")
-    if user.role == UserRole.ADMIN:
-        raise HTTPException(status_code=401, detail="请从管理后台入口登录")
 
     # 登录成功，重置失败计数
     reset_login_failure(client_ip, data.username)
