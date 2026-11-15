@@ -215,7 +215,7 @@ TEMPLATE = r"""<!DOCTYPE html>
 <body>
 <div class="bar">
   <div class="bar__in">
-    <a class="bar__back" href="../../../app/papers" title="返回套卷列表">←</a>
+    <a class="bar__back" href="../../../../app/papers" title="返回套卷列表">←</a>
     <div class="bar__title">__PAPER_TITLE__</div>
     <span class="cheat-chip" id="cheatChip" style="display:none;"></span>
     <div class="timer" id="timer">--:--</div>
