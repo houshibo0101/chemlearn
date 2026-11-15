@@ -236,6 +236,14 @@
         <el-button type="primary" @click="exitExam">返回选题</el-button>
       </template>
     </el-dialog>
+
+    <Teleport to="body">
+      <div v-if="previewVisible" class="image-preview-mask" @click.self="closePreview">
+        <button class="image-preview-close" type="button" aria-label="关闭预览" @click="closePreview">×</button>
+        <img :src="previewSrc" class="image-preview-img" alt="题目图片预览" @click.stop />
+        <div class="image-preview-hint">点击空白处或按 Esc 关闭</div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -290,9 +298,33 @@ const getSubResult = (sqId) => {
   if (!r?.sub_results) return null
   return r.sub_results.find(sr => String(sr.id) === String(sqId))
 }
+const previewVisible = ref(false)
+const previewSrc = ref('')
+let previewOverflow = ''
+
 const previewImage = (src) => {
-  window.open(mediaUrl(src), '_blank')
+  if (!src) return
+  previewSrc.value = mediaUrl(src)
+  previewOverflow = document.body.style.overflow
+  document.body.style.overflow = 'hidden'
+  previewVisible.value = true
 }
+
+const closePreview = () => {
+  previewVisible.value = false
+  previewSrc.value = ''
+  document.body.style.overflow = previewOverflow
+}
+
+const onPreviewKeydown = (event) => {
+  if (event.key === 'Escape' && previewVisible.value) closePreview()
+}
+
+onMounted(() => document.addEventListener('keydown', onPreviewKeydown))
+onUnmounted(() => {
+  document.removeEventListener('keydown', onPreviewKeydown)
+  if (previewVisible.value) document.body.style.overflow = previewOverflow
+})
 
 const loadFavorites = async () => {
   try {
@@ -555,6 +587,51 @@ onMounted(() => {
 }
 .question-image:hover {
   box-shadow: var(--shadow-lg);
+}
+
+/* 题图页面内预览，避免新开标签页 */
+.image-preview-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  background: rgba(15, 23, 42, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.image-preview-img {
+  max-width: 95vw;
+  max-height: 90vh;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+.image-preview-close {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+.image-preview-close:hover { background: rgba(255, 255, 255, 0.3); }
+.image-preview-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 14px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 12px;
+  pointer-events: none;
 }
 .sub-questions-area {
   margin-bottom: 16px;
