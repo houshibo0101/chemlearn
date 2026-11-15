@@ -145,6 +145,44 @@ async def create_exam(
     return {"id": exam.id, "message": "创建成功"}
 
 
+@router.put("/{exam_id}")
+async def update_exam(
+    exam_id: int,
+    data: ExamCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """老师修改考试设置：标题/说明/时长/总分/时间/班级/题目"""
+    if current_user.role not in (UserRole.TEACHER, UserRole.ADMIN):
+        raise HTTPException(403, "仅老师可修改考试")
+    e = (await db.execute(select(Exam).where(Exam.id == exam_id))).scalar_one_or_none()
+    if not e:
+        raise HTTPException(404, "考试不存在")
+    if current_user.role == UserRole.TEACHER and e.teacher_id != current_user.id:
+        raise HTTPException(403, "只能修改自己创建的考试")
+    if not (data.title or "").strip():
+        raise HTTPException(400, "考试标题不能为空")
+    if not data.questions:
+        raise HTTPException(400, "至少保留一道题")
+
+    e.title = data.title.strip()
+    e.description = data.description
+    e.duration = max(1, int(data.duration or 60))
+    e.total_score = max(1, int(data.total_score or 100))
+    e.start_time = datetime.fromisoformat(data.start_time) if data.start_time else None
+    e.end_time = datetime.fromisoformat(data.end_time) if data.end_time else None
+
+    # 题目和班级整体替换，保留考试本身与已有成绩
+    await db.execute(delete(ExamQuestion).where(ExamQuestion.exam_id == exam_id))
+    await db.execute(delete(ExamClass).where(ExamClass.exam_id == exam_id))
+    for i, q in enumerate(data.questions):
+        db.add(ExamQuestion(exam_id=exam_id, question_id=q.question_id, order=i, score=q.score))
+    for cid in data.class_ids:
+        db.add(ExamClass(exam_id=exam_id, class_id=cid))
+    await db.commit()
+    return {"id": e.id, "message": "设置已保存"}
+
+
 @router.post("/{exam_id}/publish")
 async def publish_exam(
     exam_id: int,

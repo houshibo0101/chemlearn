@@ -2,7 +2,7 @@
   <div class="exam-manage">
     <div class="page-header">
       <h2>考试管理</h2>
-      <el-button type="primary" @click="showCreate = true">+ 创建考试</el-button>
+      <el-button type="primary" @click="openCreate">+ 创建考试</el-button>
     </div>
 
     <el-table :data="exams" stripe>
@@ -17,17 +17,26 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="280">
+      <el-table-column label="操作" width="340">
         <template #default="{ row }">
           <el-button size="small" @click="viewRanking(row)" v-if="row.status === 'published'">排名</el-button>
+          <el-button size="small" @click="openSettings(row)">设置</el-button>
           <el-button size="small" type="success" @click="publish(row)" v-if="row.status === 'draft'">发布</el-button>
           <el-button size="small" type="danger" @click="deleteItem(row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
 
-    <!-- 创建考试弹窗 -->
-    <el-dialog v-model="showCreate" title="创建考试" width="700px">
+    <!-- 创建 / 设置考试弹窗 -->
+    <el-dialog v-model="showCreate" :title="editingExamId ? '考试设置' : '创建考试'" width="700px" :close-on-click-modal="false">
+      <el-alert
+        v-if="editingExamId && editingPublished"
+        type="warning"
+        :closable="false"
+        show-icon
+        title="这份考试已发布，修改题目或班级会影响学生看到的试卷；已有成绩保留。"
+        style="margin-bottom:12px;"
+      />
       <el-form :model="form" label-width="100px">
         <el-form-item label="考试标题"><el-input v-model="form.title" /></el-form-item>
         <el-form-item label="考试说明"><el-input v-model="form.description" type="textarea" :rows="2" /></el-form-item>
@@ -50,7 +59,7 @@
       </el-form>
       <template #footer>
         <el-button @click="showCreate = false">取消</el-button>
-        <el-button type="primary" @click="createExam">创建</el-button>
+        <el-button type="primary" @click="saveExam">{{ editingExamId ? '保存设置' : '创建' }}</el-button>
       </template>
     </el-dialog>
 
@@ -163,7 +172,19 @@ const showCreate = ref(false)
 const showQuestionPicker = ref(false)
 const showSubmissions = ref(false)
 const currentExam = ref(null)
-const form = ref({ title: '', description: '', duration: 60, total_score: 100, class_ids: [], questions: [], start_time: null, end_time: null })
+const editingExamId = ref(null)
+const editingPublished = ref(false)
+const emptyForm = () => ({
+  title: '',
+  description: '',
+  duration: 60,
+  total_score: 100,
+  class_ids: [],
+  questions: [],
+  start_time: null,
+  end_time: null,
+})
+const form = ref(emptyForm())
 const qFilter = ref({ keyword: '', difficulty: '', grade: '' })
 const qPage = ref(1)
 const qPageSize = ref(20)
@@ -210,17 +231,56 @@ function onQuestionSelect(rows) {
   form.value.questions = rows.map(r => ({ question_id: r.id, score: r.temp_score || 5 }))
 }
 
-async function createExam() {
-  if (!form.value.title) return ElMessage.warning('请输入标题')
+function openCreate() {
+  editingExamId.value = null
+  editingPublished.value = false
+  form.value = emptyForm()
+  showCreate.value = true
+}
+
+async function openSettings(row) {
+  editingExamId.value = row.id
+  editingPublished.value = row.status === 'published'
+  try {
+    const res = await api.get(`/exams/${row.id}`)
+    form.value = {
+      title: res.title || '',
+      description: res.description || '',
+      duration: res.duration || 60,
+      total_score: res.total_score || 100,
+      class_ids: row.class_ids || [],
+      questions: (res.questions || []).map(q => ({ question_id: q.id, score: q.score || 5 })),
+      start_time: res.start_time ? new Date(res.start_time) : null,
+      end_time: res.end_time ? new Date(res.end_time) : null,
+    }
+    showCreate.value = true
+  } catch (e) {
+    editingExamId.value = null
+    ElMessage.error('读取考试设置失败')
+  }
+}
+
+async function saveExam() {
+  if (!form.value.title.trim()) return ElMessage.warning('请输入标题')
   if (form.value.questions.length === 0) return ElMessage.warning('请选择题目')
-  const data = { ...form.value }
+  const data = { ...form.value, title: form.value.title.trim() }
   if (data.start_time) data.start_time = new Date(data.start_time).toISOString()
   if (data.end_time) data.end_time = new Date(data.end_time).toISOString()
-  await api.post('/exams', data)
-  ElMessage.success('创建成功')
-  showCreate.value = false
-  form.value = { title: '', description: '', duration: 60, total_score: 100, class_ids: [], questions: [], start_time: null, end_time: null }
-  loadExams()
+  try {
+    if (editingExamId.value) {
+      await api.put(`/exams/${editingExamId.value}`, data)
+      ElMessage.success('考试设置已保存')
+    } else {
+      await api.post('/exams', data)
+      ElMessage.success('创建成功')
+    }
+    showCreate.value = false
+    editingExamId.value = null
+    form.value = emptyForm()
+    loadExams()
+  } catch (e) {
+    // 错误已由拦截器提示
+  }
 }
 
 async function publish(row) {
