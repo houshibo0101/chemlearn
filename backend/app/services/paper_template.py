@@ -143,6 +143,53 @@ TEMPLATE = r"""<!DOCTYPE html>
     border: 1px solid var(--line); border-radius: 10px; background: #fff;
   }
   .fig__tip { font-size: 11.5px; color: var(--text-3); margin-top: 6px; }
+  .fig img.zoomable { cursor: zoom-in; }
+
+  /* ---------- 图片预览（不出页面，避免触发切屏检测） ---------- */
+  .img-viewer {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(15, 23, 42, .88);
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .img-viewer.open { display: flex; }
+  .img-viewer img {
+    max-width: 95vw;
+    max-height: 90vh;
+    object-fit: contain;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .35);
+  }
+  .img-viewer__close {
+    position: absolute;
+    top: 14px;
+    right: 18px;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .18);
+    color: #fff;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .img-viewer__close:hover { background: rgba(255, 255, 255, .3); }
+  .img-viewer__hint {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 14px;
+    text-align: center;
+    color: rgba(255, 255, 255, .75);
+    font-size: 12px;
+    pointer-events: none;
+  }
 
   /* ---------- 判分后状态 ---------- */
   .q.right { border-color: #A7F3D0; }
@@ -242,6 +289,12 @@ TEMPLATE = r"""<!DOCTYPE html>
 
 <div class="toast" id="toast"></div>
 
+<div class="img-viewer" id="imgViewer" aria-hidden="true">
+  <button class="img-viewer__close" id="imgViewerClose" type="button" aria-label="关闭预览">×</button>
+  <img id="imgViewerImg" alt="图片预览">
+  <div class="img-viewer__hint">点击空白处或按 Esc 关闭</div>
+</div>
+
 <script>
 const PAPER = __PAPER_DATA__;
 const TYPE_TEXT = { single: '单选题', multiple: '多选题', fill: '填空题',
@@ -335,20 +388,18 @@ function renderList() {
         '<div class="fig">' +
           q.figures.map(function (name) {
             const src = 'figimg/' + encodeURIComponent(name);
-            return '<a href="' + src + '" target="_blank" title="点击查看大图">' +
-              '<img src="' + src + '" alt="第 ' + q.no + ' 题配图" loading="lazy">' +
-              '</a>';
+            return '<img class="zoomable" src="' + src + '" alt="第 ' + q.no +
+              ' 题配图" loading="lazy" title="点击预览">';
           }).join('') +
-          '<div class="fig__tip">本题原题截图（自动切割，含题干与配图；点击放大）</div>' +
+          '<div class="fig__tip">本题原题截图（自动切割，含题干与配图；点击预览）</div>' +
         '</div>';
     } else if (q.has_figure && q.page) {
       const src = 'pageimg/' + q.page;
       figHtml =
         '<div class="fig">' +
-          '<a href="' + src + '" target="_blank" title="点击查看原卷页面">' +
-            '<img src="' + src + '" alt="原卷第 ' + q.page + ' 页" loading="lazy">' +
-          '</a>' +
-          '<div class="fig__tip">原卷配图 · 第 ' + q.page + ' 页（点击放大）</div>' +
+          '<img class="zoomable" src="' + src + '" alt="原卷第 ' + q.page +
+            ' 页" loading="lazy" title="点击预览">' +
+          '<div class="fig__tip">原卷配图 · 第 ' + q.page + ' 页（点击预览）</div>' +
         '</div>';
     }
 
@@ -607,6 +658,40 @@ function showResult(d, used) {
   document.getElementById('btnTop') && (document.getElementById('btnTop').style.display = 'none');
   box.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
+
+/* ---------- 图片预览（页面内，不新开标签页，避免误判切屏） ---------- */
+const imgViewer = $('imgViewer');
+const imgViewerImg = $('imgViewerImg');
+let bodyOverflowBeforeViewer = '';
+
+function openImageViewer(src) {
+  if (!src) return;
+  bodyOverflowBeforeViewer = document.body.style.overflow;
+  imgViewerImg.src = src;
+  imgViewer.classList.add('open');
+  imgViewer.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeImageViewer() {
+  imgViewer.classList.remove('open');
+  imgViewer.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = bodyOverflowBeforeViewer;
+}
+
+document.addEventListener('click', (event) => {
+  const img = event.target.closest && event.target.closest('img.zoomable');
+  if (img) {
+    event.preventDefault();
+    openImageViewer(img.currentSrc || img.src);
+    return;
+  }
+  if (event.target === imgViewer) closeImageViewer();
+});
+$('imgViewerClose').addEventListener('click', closeImageViewer);
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && imgViewer.classList.contains('open')) closeImageViewer();
+});
 
 /* ---------- 启动 ---------- */
 renderMeta();
