@@ -21,8 +21,32 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 APP_NAME = "Hou 晶胞编辑器"
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 FORMAT = "hou-crystal"
+
+_HERE = os.path.dirname(os.path.abspath(__file__))
+
+
+def _resource_path(name):
+    base = getattr(sys, "_MEIPASS", _HERE)
+    return os.path.join(base, name)
+
+
+def _load_elements():
+    try:
+        with open(_resource_path("elements.json"), "r", encoding="utf-8") as f:
+            data = json.load(f)
+        elements = data.get("elements") or []
+        return (
+            {e["symbol"]: e for e in elements},
+            data.get("table_rows") or [],
+            data.get("f_rows") or [],
+        )
+    except Exception:
+        return {}, [], []
+
+
+ELEMENT_MAP, TABLE_ROWS, F_ROWS = _load_elements()
 
 COLORS = {
     "H": "#f8fafc", "C": "#334155", "N": "#2563eb", "O": "#ef4444",
@@ -45,11 +69,26 @@ CELL_EDGES = [(0, 1), (1, 2), (2, 3), (3, 0), (4, 5), (5, 6), (6, 7), (7, 4),
 
 
 def element_color(element):
-    return COLORS.get(str(element or "").strip(), "#64748b")
+    key = str(element or "").strip()
+    if key in ELEMENT_MAP:
+        return ELEMENT_MAP[key].get("color") or COLORS.get(key, "#64748b")
+    return COLORS.get(key, "#64748b")
 
 
 def element_radius(element):
-    return RADII.get(str(element or "").strip(), .1)
+    key = str(element or "").strip()
+    if key in ELEMENT_MAP:
+        return max(.04, min(.18, float(ELEMENT_MAP[key].get("radius") or .8) / 8))
+    return RADII.get(key, .1)
+
+
+def text_color(hex_color):
+    value = str(hex_color or "#64748b").lstrip("#")
+    try:
+        r, g, b = (int(value[i:i + 2], 16) / 255 for i in (0, 2, 4))
+    except ValueError:
+        return "#ffffff"
+    return "#0f172a" if 0.299 * r + 0.587 * g + 0.114 * b > 0.62 else "#ffffff"
 
 
 def lattice_vectors(lat):
@@ -176,6 +215,8 @@ class HouEditor:
         add.pack(fill="x", pady=(0, 5))
         tk.Label(add, text="元素", bg="#ffffff", font=self.font).pack(side="left")
         tk.Entry(add, textvariable=self.element_var, width=4, font=self.font).pack(side="left", padx=3)
+        tk.Button(add, text="周期表", command=self.open_periodic, relief="flat",
+                  bg="#eef2ff", fg="#4338ca", padx=6, font=self.font).pack(side="left", padx=2)
         for key, var in (("x", self.x_var), ("y", self.y_var), ("z", self.z_var)):
             tk.Label(add, text=key, bg="#ffffff", fg="#94a3b8", font=self.font).pack(side="left")
             tk.Entry(add, textvariable=var, width=5, font=self.font).pack(side="left", padx=2)
@@ -252,6 +293,56 @@ class HouEditor:
         self.atoms = [{"element": e, "x": x, "y": y, "z": z} for e, x, y, z in atoms]
         self.refresh_tree()
         self.render()
+
+    # -------------------------------------------------------------- periodic
+    def select_element(self, symbol):
+        self.element_var.set(symbol)
+        self.status_var.set(f"当前元素：{symbol}，点「添加」放入原子坐标")
+        try:
+            self.periodic_window.destroy()
+        except Exception:
+            pass
+
+    def open_periodic(self):
+        if not TABLE_ROWS:
+            messagebox.showinfo(APP_NAME, "元素周期表数据未加载")
+            return
+        top = tk.Toplevel(self.root)
+        self.periodic_window = top
+        top.title("元素周期表")
+        top.configure(bg="#f8fafc")
+        tk.Label(top, text="点击元素设为当前放置原子", bg="#f8fafc", fg="#64748b",
+                 font=self.font).pack(anchor="w", padx=12, pady=(10, 4))
+        grid = tk.Frame(top, bg="#f8fafc")
+        grid.pack(padx=10, pady=4)
+        for r, row in enumerate(TABLE_ROWS):
+            for c, symbol in enumerate(row):
+                if not symbol:
+                    tk.Label(grid, text="", width=3, bg="#f8fafc").grid(row=r, column=c, padx=1, pady=1)
+                    continue
+                info = ELEMENT_MAP.get(symbol, {})
+                color = element_color(symbol)
+                tk.Button(
+                    grid, text=f"{symbol}\n{info.get('z', '')}", width=3, height=2,
+                    font=("Microsoft YaHei", 7), bg=color, fg=text_color(color),
+                    relief="flat", bd=0, padx=0, pady=0,
+                    command=lambda s=symbol: self.select_element(s),
+                ).grid(row=r, column=c, padx=1, pady=1)
+        fblock = tk.Frame(top, bg="#f8fafc")
+        fblock.pack(padx=10, pady=(2, 10), anchor="w")
+        for ri, row in enumerate(F_ROWS):
+            tk.Label(fblock, text="镧系" if ri == 0 else "锕系", bg="#f8fafc",
+                     fg="#94a3b8", font=self.font).grid(row=ri, column=0, padx=(4, 8), sticky="e")
+            for ci, symbol in enumerate(row):
+                info = ELEMENT_MAP.get(symbol, {})
+                color = element_color(symbol)
+                tk.Button(
+                    fblock, text=f"{symbol}\n{info.get('z', '')}", width=3, height=2,
+                    font=("Microsoft YaHei", 7), bg=color, fg=text_color(color),
+                    relief="flat", bd=0, padx=0, pady=0,
+                    command=lambda s=symbol: self.select_element(s),
+                ).grid(row=ri, column=ci + 1, padx=1, pady=1)
+        top.transient(self.root)
 
     # ---------------------------------------------------------------- atoms
     def refresh_tree(self):
@@ -381,7 +472,7 @@ class HouEditor:
                           fill=element_color(atom["element"]), outline="#0f172a", width=1.2)
             if r >= 6:
                 c.create_text(sx, sy, text=str(atom["element"]),
-                              fill="#ffffff" if atom["element"] in ("H", "C") else "#102033",
+                              fill=text_color(element_color(atom["element"])),
                               font=("Microsoft YaHei", max(7, min(11, int(r)))))
 
         c.create_text(14, h - 14, text="拖动旋转 · 滚轮缩放", anchor="w", fill="#94a3b8", font=self.font)

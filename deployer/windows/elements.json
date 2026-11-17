@@ -1,0 +1,1008 @@
+{
+  "elements": [
+    {
+      "z": 1,
+      "symbol": "H",
+      "name": "氢",
+      "radius": 0.31,
+      "color": "#f8fafc"
+    },
+    {
+      "z": 2,
+      "symbol": "He",
+      "name": "氦",
+      "radius": 0.28,
+      "color": "#e0f2fe"
+    },
+    {
+      "z": 3,
+      "symbol": "Li",
+      "name": "锂",
+      "radius": 1.28,
+      "color": "#a855f7"
+    },
+    {
+      "z": 4,
+      "symbol": "Be",
+      "name": "铍",
+      "radius": 0.96,
+      "color": "#15803d"
+    },
+    {
+      "z": 5,
+      "symbol": "B",
+      "name": "硼",
+      "radius": 0.84,
+      "color": "#f97316"
+    },
+    {
+      "z": 6,
+      "symbol": "C",
+      "name": "碳",
+      "radius": 0.76,
+      "color": "#334155"
+    },
+    {
+      "z": 7,
+      "symbol": "N",
+      "name": "氮",
+      "radius": 0.71,
+      "color": "#2563eb"
+    },
+    {
+      "z": 8,
+      "symbol": "O",
+      "name": "氧",
+      "radius": 0.66,
+      "color": "#ef4444"
+    },
+    {
+      "z": 9,
+      "symbol": "F",
+      "name": "氟",
+      "radius": 0.57,
+      "color": "#22c55e"
+    },
+    {
+      "z": 10,
+      "symbol": "Ne",
+      "name": "氖",
+      "radius": 0.58,
+      "color": "#06b6d4"
+    },
+    {
+      "z": 11,
+      "symbol": "Na",
+      "name": "钠",
+      "radius": 1.66,
+      "color": "#a855f7"
+    },
+    {
+      "z": 12,
+      "symbol": "Mg",
+      "name": "镁",
+      "radius": 1.41,
+      "color": "#84cc16"
+    },
+    {
+      "z": 13,
+      "symbol": "Al",
+      "name": "铝",
+      "radius": 1.21,
+      "color": "#94a3b8"
+    },
+    {
+      "z": 14,
+      "symbol": "Si",
+      "name": "硅",
+      "radius": 1.11,
+      "color": "#64748b"
+    },
+    {
+      "z": 15,
+      "symbol": "P",
+      "name": "磷",
+      "radius": 1.07,
+      "color": "#f97316"
+    },
+    {
+      "z": 16,
+      "symbol": "S",
+      "name": "硫",
+      "radius": 1.05,
+      "color": "#eab308"
+    },
+    {
+      "z": 17,
+      "symbol": "Cl",
+      "name": "氯",
+      "radius": 1.02,
+      "color": "#16a34a"
+    },
+    {
+      "z": 18,
+      "symbol": "Ar",
+      "name": "氩",
+      "radius": 1.06,
+      "color": "#06b6d4"
+    },
+    {
+      "z": 19,
+      "symbol": "K",
+      "name": "钾",
+      "radius": 2.03,
+      "color": "#7c3aed"
+    },
+    {
+      "z": 20,
+      "symbol": "Ca",
+      "name": "钙",
+      "radius": 1.76,
+      "color": "#0ea5e9"
+    },
+    {
+      "z": 21,
+      "symbol": "Sc",
+      "name": "钪",
+      "radius": 1.7,
+      "color": "#64748b"
+    },
+    {
+      "z": 22,
+      "symbol": "Ti",
+      "name": "钛",
+      "radius": 1.6,
+      "color": "#94a3b8"
+    },
+    {
+      "z": 23,
+      "symbol": "V",
+      "name": "钒",
+      "radius": 1.53,
+      "color": "#8b5cf6"
+    },
+    {
+      "z": 24,
+      "symbol": "Cr",
+      "name": "铬",
+      "radius": 1.39,
+      "color": "#0f766e"
+    },
+    {
+      "z": 25,
+      "symbol": "Mn",
+      "name": "锰",
+      "radius": 1.39,
+      "color": "#a16207"
+    },
+    {
+      "z": 26,
+      "symbol": "Fe",
+      "name": "铁",
+      "radius": 1.32,
+      "color": "#b45309"
+    },
+    {
+      "z": 27,
+      "symbol": "Co",
+      "name": "钴",
+      "radius": 1.26,
+      "color": "#be185d"
+    },
+    {
+      "z": 28,
+      "symbol": "Ni",
+      "name": "镍",
+      "radius": 1.24,
+      "color": "#15803d"
+    },
+    {
+      "z": 29,
+      "symbol": "Cu",
+      "name": "铜",
+      "radius": 1.32,
+      "color": "#b06a3c"
+    },
+    {
+      "z": 30,
+      "symbol": "Zn",
+      "name": "锌",
+      "radius": 1.22,
+      "color": "#71717a"
+    },
+    {
+      "z": 31,
+      "symbol": "Ga",
+      "name": "镓",
+      "radius": 1.22,
+      "color": "#64748b"
+    },
+    {
+      "z": 32,
+      "symbol": "Ge",
+      "name": "锗",
+      "radius": 1.2,
+      "color": "#64748b"
+    },
+    {
+      "z": 33,
+      "symbol": "As",
+      "name": "砷",
+      "radius": 1.19,
+      "color": "#a16207"
+    },
+    {
+      "z": 34,
+      "symbol": "Se",
+      "name": "硒",
+      "radius": 1.2,
+      "color": "#eab308"
+    },
+    {
+      "z": 35,
+      "symbol": "Br",
+      "name": "溴",
+      "radius": 1.2,
+      "color": "#b45309"
+    },
+    {
+      "z": 36,
+      "symbol": "Kr",
+      "name": "氪",
+      "radius": 1.16,
+      "color": "#06b6d4"
+    },
+    {
+      "z": 37,
+      "symbol": "Rb",
+      "name": "铷",
+      "radius": 2.2,
+      "color": "#7c3aed"
+    },
+    {
+      "z": 38,
+      "symbol": "Sr",
+      "name": "锶",
+      "radius": 1.95,
+      "color": "#0ea5e9"
+    },
+    {
+      "z": 39,
+      "symbol": "Y",
+      "name": "钇",
+      "radius": 1.9,
+      "color": "#64748b"
+    },
+    {
+      "z": 40,
+      "symbol": "Zr",
+      "name": "锆",
+      "radius": 1.75,
+      "color": "#94a3b8"
+    },
+    {
+      "z": 41,
+      "symbol": "Nb",
+      "name": "铌",
+      "radius": 1.64,
+      "color": "#8b5cf6"
+    },
+    {
+      "z": 42,
+      "symbol": "Mo",
+      "name": "钼",
+      "radius": 1.54,
+      "color": "#0f766e"
+    },
+    {
+      "z": 43,
+      "symbol": "Tc",
+      "name": "锝",
+      "radius": 1.47,
+      "color": "#0f766e"
+    },
+    {
+      "z": 44,
+      "symbol": "Ru",
+      "name": "钌",
+      "radius": 1.46,
+      "color": "#64748b"
+    },
+    {
+      "z": 45,
+      "symbol": "Rh",
+      "name": "铑",
+      "radius": 1.42,
+      "color": "#64748b"
+    },
+    {
+      "z": 46,
+      "symbol": "Pd",
+      "name": "钯",
+      "radius": 1.39,
+      "color": "#94a3b8"
+    },
+    {
+      "z": 47,
+      "symbol": "Ag",
+      "name": "银",
+      "radius": 1.45,
+      "color": "#cbd5e1"
+    },
+    {
+      "z": 48,
+      "symbol": "Cd",
+      "name": "镉",
+      "radius": 1.44,
+      "color": "#71717a"
+    },
+    {
+      "z": 49,
+      "symbol": "In",
+      "name": "铟",
+      "radius": 1.42,
+      "color": "#64748b"
+    },
+    {
+      "z": 50,
+      "symbol": "Sn",
+      "name": "锡",
+      "radius": 1.39,
+      "color": "#64748b"
+    },
+    {
+      "z": 51,
+      "symbol": "Sb",
+      "name": "锑",
+      "radius": 1.39,
+      "color": "#a16207"
+    },
+    {
+      "z": 52,
+      "symbol": "Te",
+      "name": "碲",
+      "radius": 1.38,
+      "color": "#eab308"
+    },
+    {
+      "z": 53,
+      "symbol": "I",
+      "name": "碘",
+      "radius": 1.39,
+      "color": "#7e22ce"
+    },
+    {
+      "z": 54,
+      "symbol": "Xe",
+      "name": "氙",
+      "radius": 1.4,
+      "color": "#06b6d4"
+    },
+    {
+      "z": 55,
+      "symbol": "Cs",
+      "name": "铯",
+      "radius": 2.44,
+      "color": "#f59e0b"
+    },
+    {
+      "z": 56,
+      "symbol": "Ba",
+      "name": "钡",
+      "radius": 2.15,
+      "color": "#14b8a6"
+    },
+    {
+      "z": 57,
+      "symbol": "La",
+      "name": "镧",
+      "radius": 2.07,
+      "color": "#64748b"
+    },
+    {
+      "z": 58,
+      "symbol": "Ce",
+      "name": "铈",
+      "radius": 2.04,
+      "color": "#64748b"
+    },
+    {
+      "z": 59,
+      "symbol": "Pr",
+      "name": "镨",
+      "radius": 2.03,
+      "color": "#64748b"
+    },
+    {
+      "z": 60,
+      "symbol": "Nd",
+      "name": "钕",
+      "radius": 2.01,
+      "color": "#64748b"
+    },
+    {
+      "z": 61,
+      "symbol": "Pm",
+      "name": "钷",
+      "radius": 1.99,
+      "color": "#64748b"
+    },
+    {
+      "z": 62,
+      "symbol": "Sm",
+      "name": "钐",
+      "radius": 1.98,
+      "color": "#64748b"
+    },
+    {
+      "z": 63,
+      "symbol": "Eu",
+      "name": "铕",
+      "radius": 1.98,
+      "color": "#64748b"
+    },
+    {
+      "z": 64,
+      "symbol": "Gd",
+      "name": "钆",
+      "radius": 1.96,
+      "color": "#64748b"
+    },
+    {
+      "z": 65,
+      "symbol": "Tb",
+      "name": "铽",
+      "radius": 1.94,
+      "color": "#64748b"
+    },
+    {
+      "z": 66,
+      "symbol": "Dy",
+      "name": "镝",
+      "radius": 1.92,
+      "color": "#64748b"
+    },
+    {
+      "z": 67,
+      "symbol": "Ho",
+      "name": "钬",
+      "radius": 1.92,
+      "color": "#64748b"
+    },
+    {
+      "z": 68,
+      "symbol": "Er",
+      "name": "铒",
+      "radius": 1.89,
+      "color": "#64748b"
+    },
+    {
+      "z": 69,
+      "symbol": "Tm",
+      "name": "铥",
+      "radius": 1.9,
+      "color": "#64748b"
+    },
+    {
+      "z": 70,
+      "symbol": "Yb",
+      "name": "镱",
+      "radius": 1.87,
+      "color": "#64748b"
+    },
+    {
+      "z": 71,
+      "symbol": "Lu",
+      "name": "镥",
+      "radius": 1.87,
+      "color": "#64748b"
+    },
+    {
+      "z": 72,
+      "symbol": "Hf",
+      "name": "铪",
+      "radius": 1.75,
+      "color": "#94a3b8"
+    },
+    {
+      "z": 73,
+      "symbol": "Ta",
+      "name": "钽",
+      "radius": 1.7,
+      "color": "#8b5cf6"
+    },
+    {
+      "z": 74,
+      "symbol": "W",
+      "name": "钨",
+      "radius": 1.62,
+      "color": "#0f766e"
+    },
+    {
+      "z": 75,
+      "symbol": "Re",
+      "name": "铼",
+      "radius": 1.51,
+      "color": "#0f766e"
+    },
+    {
+      "z": 76,
+      "symbol": "Os",
+      "name": "锇",
+      "radius": 1.44,
+      "color": "#64748b"
+    },
+    {
+      "z": 77,
+      "symbol": "Ir",
+      "name": "铱",
+      "radius": 1.41,
+      "color": "#64748b"
+    },
+    {
+      "z": 78,
+      "symbol": "Pt",
+      "name": "铂",
+      "radius": 1.36,
+      "color": "#94a3b8"
+    },
+    {
+      "z": 79,
+      "symbol": "Au",
+      "name": "金",
+      "radius": 1.36,
+      "color": "#eab308"
+    },
+    {
+      "z": 80,
+      "symbol": "Hg",
+      "name": "汞",
+      "radius": 1.32,
+      "color": "#94a3b8"
+    },
+    {
+      "z": 81,
+      "symbol": "Tl",
+      "name": "铊",
+      "radius": 1.45,
+      "color": "#64748b"
+    },
+    {
+      "z": 82,
+      "symbol": "Pb",
+      "name": "铅",
+      "radius": 1.46,
+      "color": "#64748b"
+    },
+    {
+      "z": 83,
+      "symbol": "Bi",
+      "name": "铋",
+      "radius": 1.48,
+      "color": "#64748b"
+    },
+    {
+      "z": 84,
+      "symbol": "Po",
+      "name": "钋",
+      "radius": 1.4,
+      "color": "#a16207"
+    },
+    {
+      "z": 85,
+      "symbol": "At",
+      "name": "砹",
+      "radius": 1.5,
+      "color": "#7e22ce"
+    },
+    {
+      "z": 86,
+      "symbol": "Rn",
+      "name": "氡",
+      "radius": 1.5,
+      "color": "#06b6d4"
+    },
+    {
+      "z": 87,
+      "symbol": "Fr",
+      "name": "钫",
+      "radius": 2.6,
+      "color": "#f59e0b"
+    },
+    {
+      "z": 88,
+      "symbol": "Ra",
+      "name": "镭",
+      "radius": 2.21,
+      "color": "#14b8a6"
+    },
+    {
+      "z": 89,
+      "symbol": "Ac",
+      "name": "锕",
+      "radius": 2.15,
+      "color": "#64748b"
+    },
+    {
+      "z": 90,
+      "symbol": "Th",
+      "name": "钍",
+      "radius": 2.06,
+      "color": "#64748b"
+    },
+    {
+      "z": 91,
+      "symbol": "Pa",
+      "name": "镤",
+      "radius": 2,
+      "color": "#64748b"
+    },
+    {
+      "z": 92,
+      "symbol": "U",
+      "name": "铀",
+      "radius": 1.96,
+      "color": "#15803d"
+    },
+    {
+      "z": 93,
+      "symbol": "Np",
+      "name": "镎",
+      "radius": 1.9,
+      "color": "#64748b"
+    },
+    {
+      "z": 94,
+      "symbol": "Pu",
+      "name": "钚",
+      "radius": 1.87,
+      "color": "#64748b"
+    },
+    {
+      "z": 95,
+      "symbol": "Am",
+      "name": "镅",
+      "radius": 1.8,
+      "color": "#64748b"
+    },
+    {
+      "z": 96,
+      "symbol": "Cm",
+      "name": "锔",
+      "radius": 1.69,
+      "color": "#64748b"
+    },
+    {
+      "z": 97,
+      "symbol": "Bk",
+      "name": "锫",
+      "radius": 1.6,
+      "color": "#64748b"
+    },
+    {
+      "z": 98,
+      "symbol": "Cf",
+      "name": "锎",
+      "radius": 1.6,
+      "color": "#64748b"
+    },
+    {
+      "z": 99,
+      "symbol": "Es",
+      "name": "锿",
+      "radius": 1.6,
+      "color": "#64748b"
+    },
+    {
+      "z": 100,
+      "symbol": "Fm",
+      "name": "镄",
+      "radius": 1.6,
+      "color": "#64748b"
+    },
+    {
+      "z": 101,
+      "symbol": "Md",
+      "name": "钔",
+      "radius": 1.6,
+      "color": "#64748b"
+    },
+    {
+      "z": 102,
+      "symbol": "No",
+      "name": "锘",
+      "radius": 1.6,
+      "color": "#64748b"
+    },
+    {
+      "z": 103,
+      "symbol": "Lr",
+      "name": "铹",
+      "radius": 1.6,
+      "color": "#64748b"
+    },
+    {
+      "z": 104,
+      "symbol": "Rf",
+      "name": "𬬻",
+      "radius": 1.6,
+      "color": "#64748b"
+    },
+    {
+      "z": 105,
+      "symbol": "Db",
+      "name": "𬭊",
+      "radius": 1.6,
+      "color": "#64748b"
+    },
+    {
+      "z": 106,
+      "symbol": "Sg",
+      "name": "𬭳",
+      "radius": 1.6,
+      "color": "#64748b"
+    },
+    {
+      "z": 107,
+      "symbol": "Bh",
+      "name": "𬭛",
+      "radius": 1.6,
+      "color": "#64748b"
+    },
+    {
+      "z": 108,
+      "symbol": "Hs",
+      "name": "𬭶",
+      "radius": 1.6,
+      "color": "#64748b"
+    },
+    {
+      "z": 109,
+      "symbol": "Mt",
+      "name": "鿏",
+      "radius": 1.6,
+      "color": "#64748b"
+    },
+    {
+      "z": 110,
+      "symbol": "Ds",
+      "name": "𫟼",
+      "radius": 1.6,
+      "color": "#64748b"
+    },
+    {
+      "z": 111,
+      "symbol": "Rg",
+      "name": "𬬭",
+      "radius": 1.6,
+      "color": "#64748b"
+    },
+    {
+      "z": 112,
+      "symbol": "Cn",
+      "name": "鿔",
+      "radius": 1.6,
+      "color": "#64748b"
+    },
+    {
+      "z": 113,
+      "symbol": "Nh",
+      "name": "鿭",
+      "radius": 1.6,
+      "color": "#64748b"
+    },
+    {
+      "z": 114,
+      "symbol": "Fl",
+      "name": "𫓧",
+      "radius": 1.6,
+      "color": "#64748b"
+    },
+    {
+      "z": 115,
+      "symbol": "Mc",
+      "name": "镆",
+      "radius": 1.6,
+      "color": "#64748b"
+    },
+    {
+      "z": 116,
+      "symbol": "Lv",
+      "name": "𫟷",
+      "radius": 1.6,
+      "color": "#64748b"
+    },
+    {
+      "z": 117,
+      "symbol": "Ts",
+      "name": "鿬",
+      "radius": 1.6,
+      "color": "#64748b"
+    },
+    {
+      "z": 118,
+      "symbol": "Og",
+      "name": "鿫",
+      "radius": 1.6,
+      "color": "#64748b"
+    }
+  ],
+  "table_rows": [
+    [
+      "H",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      "He"
+    ],
+    [
+      "Li",
+      "Be",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      "B",
+      "C",
+      "N",
+      "O",
+      "F",
+      "Ne"
+    ],
+    [
+      "Na",
+      "Mg",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      "Al",
+      "Si",
+      "P",
+      "S",
+      "Cl",
+      "Ar"
+    ],
+    [
+      "K",
+      "Ca",
+      "Sc",
+      "Ti",
+      "V",
+      "Cr",
+      "Mn",
+      "Fe",
+      "Co",
+      "Ni",
+      "Cu",
+      "Zn",
+      "Ga",
+      "Ge",
+      "As",
+      "Se",
+      "Br",
+      "Kr"
+    ],
+    [
+      "Rb",
+      "Sr",
+      "Y",
+      "Zr",
+      "Nb",
+      "Mo",
+      "Tc",
+      "Ru",
+      "Rh",
+      "Pd",
+      "Ag",
+      "Cd",
+      "In",
+      "Sn",
+      "Sb",
+      "Te",
+      "I",
+      "Xe"
+    ],
+    [
+      "Cs",
+      "Ba",
+      "La",
+      "Hf",
+      "Ta",
+      "W",
+      "Re",
+      "Os",
+      "Ir",
+      "Pt",
+      "Au",
+      "Hg",
+      "Tl",
+      "Pb",
+      "Bi",
+      "Po",
+      "At",
+      "Rn"
+    ],
+    [
+      "Fr",
+      "Ra",
+      "Ac",
+      "Rf",
+      "Db",
+      "Sg",
+      "Bh",
+      "Hs",
+      "Mt",
+      "Ds",
+      "Rg",
+      "Cn",
+      "Nh",
+      "Fl",
+      "Mc",
+      "Lv",
+      "Ts",
+      "Og"
+    ]
+  ],
+  "f_rows": [
+    [
+      "La",
+      "Ce",
+      "Pr",
+      "Nd",
+      "Pm",
+      "Sm",
+      "Eu",
+      "Gd",
+      "Tb",
+      "Dy",
+      "Ho",
+      "Er",
+      "Tm",
+      "Yb",
+      "Lu"
+    ],
+    [
+      "Ac",
+      "Th",
+      "Pa",
+      "U",
+      "Np",
+      "Pu",
+      "Am",
+      "Cm",
+      "Bk",
+      "Cf",
+      "Es",
+      "Fm",
+      "Md",
+      "No",
+      "Lr"
+    ]
+  ]
+}

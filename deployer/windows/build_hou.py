@@ -19,6 +19,7 @@ cmd = [
     "--distpath", OUT,
     "--workpath", WORK,
     "--specpath", SPEC,
+    "--add-data", "%s%s." % (os.path.join(HERE, "elements.json"), os.pathsep),
     "--hidden-import", "tkinter",
     "--hidden-import", "tkinter.ttk",
     "--hidden-import", "tkinter.filedialog",

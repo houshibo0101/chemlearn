@@ -56,6 +56,7 @@
           <div class="hou-section">原子坐标（分数坐标 0–1）</div>
           <div class="hou-add">
             <el-input v-model="newAtom.element" maxlength="3" style="width: 62px;" placeholder="元素" />
+            <el-button :icon="Grid" size="small" @click="showPeriodic = true">周期表</el-button>
             <el-input-number v-model="newAtom.x" :min="-1" :max="2" :step="0.125" :precision="3" size="small" controls-position="right" />
             <el-input-number v-model="newAtom.y" :min="-1" :max="2" :step="0.125" :precision="3" size="small" controls-position="right" />
             <el-input-number v-model="newAtom.z" :min="-1" :max="2" :step="0.125" :precision="3" size="small" controls-position="right" />
@@ -72,7 +73,7 @@
             </div>
             <div v-if="atoms.length === 0" class="hou-empty">还没有原子，可添加或应用模板</div>
           </div>
-          <div class="hou-count">共 {{ atoms.length }} 个原子 · A/B 由元素颜色区分</div>
+          <div class="hou-count">共 {{ atoms.length }} 个原子 · 当前元素 {{ newAtom.element }}</div>
         </div>
 
         <div ref="canvasWrap" class="hou-canvas-wrap">
@@ -90,12 +91,20 @@
       </div>
     </div>
   </el-dialog>
+
+  <ElementPicker
+    v-model="newAtom.element"
+    v-model:open="showPeriodic"
+    @select="chooseElement"
+  />
 </template>
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Download, Upload } from '@element-plus/icons-vue'
+import { Download, Upload, Grid } from '@element-plus/icons-vue'
+import ElementPicker from '@/components/ElementPicker.vue'
+import { elementColor, elementRadius } from '@/utils/periodicTable'
 
 const props = defineProps({ modelValue: { type: Boolean, default: false } })
 const emit = defineEmits(['update:modelValue', 'insert'])
@@ -112,6 +121,7 @@ const canvasWrap = ref(null)
 const fileInput = ref(null)
 const drawing = ref(false)
 const exporting = ref(false)
+const showPeriodic = ref(false)
 
 const name = ref('晶胞结构')
 const preset = ref('cubic')
@@ -131,19 +141,12 @@ const presetText = computed(() => ({
 }[preset.value] || ''))
 const fmt = (v) => Number(v || 0).toFixed(3)
 
-const elementColors = {
-  H: '#f8fafc', C: '#334155', N: '#2563eb', O: '#ef4444', F: '#22c55e',
-  Na: '#a855f7', Mg: '#84cc16', Al: '#94a3b8', Si: '#64748b', P: '#f97316',
-  S: '#eab308', Cl: '#16a34a', K: '#7c3aed', Ca: '#0ea5e9', Fe: '#b45309',
-  Cu: '#b06a3c', Zn: '#71717a', Cs: '#f59e0b', Ba: '#14b8a6',
-}
-const elementColor = (e) => elementColors[String(e || '').trim()] || '#64748b'
-const elementRadius = (e) => {
-  const key = String(e || '').trim()
-  if (['H', 'F', 'Cl', 'O', 'N'].includes(key)) return 0.075
-  if (['Na', 'Mg', 'K', 'Ca'].includes(key)) return 0.12
-  if (['Cs', 'Ba'].includes(key)) return 0.14
-  return 0.10
+const elementTextColor = (hex) => {
+  const value = String(hex || '#64748b').replace('#', '')
+  const r = parseInt(value.slice(0, 2), 16) / 255
+  const g = parseInt(value.slice(2, 4), 16) / 255
+  const b = parseInt(value.slice(4, 6), 16) / 255
+  return (0.299 * r + 0.587 * g + 0.114 * b) > 0.62 ? '#0f172a' : '#ffffff'
 }
 
 function latticeVectors(l) {
@@ -296,7 +299,7 @@ function render(w = W, h = H) {
     ctx.stroke()
     const label = String(item.atom.element || '').trim()
     if (label && r >= 6) {
-      ctx.fillStyle = ['H', 'C'].includes(label) ? '#fff' : '#102033'
+      ctx.fillStyle = elementTextColor(elementColor(item.atom.element))
       ctx.font = `${Math.max(8, Math.min(12, r))}px Microsoft YaHei, Arial`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
@@ -406,6 +409,12 @@ const addAtom = () => {
   if (!element) { ElMessage.warning('请输入元素符号'); return }
   atoms.value.push(makeAtom(element, Number(newAtom.x) || 0, Number(newAtom.y) || 0, Number(newAtom.z) || 0))
   render()
+}
+
+const chooseElement = (symbol) => {
+  newAtom.element = symbol
+  showPeriodic.value = false
+  ElMessage.success(`已选择 ${symbol}，填写坐标后点「添加」`)
 }
 const removeAtom = (i) => { atoms.value.splice(i, 1); render() }
 
