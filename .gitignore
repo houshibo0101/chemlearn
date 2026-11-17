@@ -69,3 +69,7 @@ web/android/app/src/main/assets/public/
 # ---------- 本地打包产物 ----------
 release/
 
+
+# ---------- 晶胞编辑器 PyInstaller 构建产物 ----------
+deployer/windows/build_hou/
+

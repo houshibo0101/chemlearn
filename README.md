@@ -1,4 +1,4 @@
-# 化学学习系统 · ChemLearn
+﻿# 化学学习系统 · ChemLearn
 
 [![CI](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml/badge.svg)](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml)
 
@@ -34,7 +34,7 @@
 | 文件 | 平台 | 说明 |
 |---|---|---|
 | [ChemLearn-Deployer-v1.3.0.exe](https://github.com/houshibo0101/chemlearn/releases/tag/v1.3.0) | Linux 服务器 | 填 IP、SSH 密码和 AI Key，自动装好 nginx / Python / systemd，3–6 分钟完成 |
-| [ChemLearnWindows-v2.1.41.exe](https://github.com/houshibo0101/chemlearn/releases/tag/windows-v2.1.41) | Windows 本机 | 双击部署到本机，界面里看地址 / 开系统 / 重置，局域网可访问 |
+| [ChemLearnWindows-v2.1.42.exe](https://github.com/houshibo0101/chemlearn/releases/tag/windows-v2.1.42) | Windows 本机 | 双击部署到本机，界面里看地址 / 开系统 / 重置，局域网可访问 |
 | [题库数据包 453 题](https://github.com/houshibo0101/chemlearn/releases/tag/question-bank-v1) | 通用 | 解压到 `backend/import_data/` 后跑导入脚本 |
 
 > Linux 部署器内置完整部署包（源码 + 前端 + 依赖清单），目标机只需能联网的 Ubuntu / Debian。
@@ -108,16 +108,18 @@
 
 结构式目前作为图片展示，不参与自动判分；学生若要画结构作答，需要人工批改，可后续再加。
 
-### 晶胞编辑器
+### 晶胞编辑器（3D + .hou）
 
-题库管理 → 上传题目 → 题目图片 → **「画晶胞」**，面向结构化学的晶胞投影图：
+题库管理 → 上传题目 → 题目图片 → **「画晶胞」**：
 
-- 模板：简单立方、体心立方、面心立方、NaCl 型、CsCl 型、金刚石型
-- 点击原子切换 A / B / 隐藏，可补充自定义原子位置
-- 自动统计 A/B 原子数量，支持显示原子标签
-- 一键生成 PNG 插入题目图片，做题页、作业、考试直接显示
+- 晶胞参数：a/b/c/α/β/γ，支持立方晶胞、六方晶胞（γ=120°）和自定义
+- 原子模板：简单立方、体心立方、面心立方、NaCl 型、CsCl 型、金刚石型
+- 原子分数坐标可逐行编辑，也可点空白添加原子
+- 右侧画布支持鼠标拖动旋转、滚轮缩放
+- 支持保存/打开 `.hou` 文件（JSON 格式，见 [`docs/HOU-Format.md`](docs/HOU-Format.md)）
+- 点「插入到题目」生成 PNG，做题页、作业、考试直接显示
 
-晶胞图同样作为图片保存，不参与自动判分；可以先用模板生成，再插入自定义文字说明。
+独立的 Windows 桌面版：`deployer/windows/out/HouCrystalEditor.exe`，离线编辑、保存 `.hou`，与网页版格式互通。
 
 ## 技术栈
 
