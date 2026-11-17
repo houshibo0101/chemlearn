@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Hou 晶胞编辑器（独立 Windows 桌面版）
 
@@ -21,7 +21,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 APP_NAME = "Hou 晶胞编辑器"
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 FORMAT = "hou-crystal"
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -136,6 +136,8 @@ class HouEditor:
         self.atoms = []
         self.rx, self.ry, self.zoom = 20.0, -28.0, 1.0
         self.drag = None
+        self.last_scene = None
+        self.add_mode = tk.BooleanVar(value=False)
         self.font = ("Microsoft YaHei", 9)
         self.font_bold = ("Microsoft YaHei", 10, "bold")
 
@@ -222,6 +224,8 @@ class HouEditor:
             tk.Entry(add, textvariable=var, width=5, font=self.font).pack(side="left", padx=2)
         tk.Button(add, text="添加", command=self.add_atom, relief="flat",
                   bg="#4f46e5", fg="white", padx=8, font=self.font).pack(side="left", padx=4)
+        tk.Checkbutton(add, text="点画布放置", variable=self.add_mode, bg="#ffffff",
+                       activebackground="#ffffff", font=self.font).pack(side="left", padx=2)
 
         actions = tk.Frame(left, bg="#ffffff")
         actions.pack(fill="x")
@@ -239,7 +243,7 @@ class HouEditor:
         self.canvas.pack(fill="both", expand=True)
         self.canvas.bind("<ButtonPress-1>", self.on_drag_start)
         self.canvas.bind("<B1-Motion>", self.on_drag_move)
-        self.canvas.bind("<ButtonRelease-1>", lambda e: setattr(self, "drag", None))
+        self.canvas.bind("<ButtonRelease-1>", self.on_drag_end)
         self.canvas.bind("<MouseWheel>", self.on_wheel)
         self.canvas.bind("<Button-4>", lambda e: self.zoom_by(1.08))
         self.canvas.bind("<Button-5>", lambda e: self.zoom_by(.92))
@@ -297,7 +301,8 @@ class HouEditor:
     # -------------------------------------------------------------- periodic
     def select_element(self, symbol):
         self.element_var.set(symbol)
-        self.status_var.set(f"当前元素：{symbol}，点「添加」放入原子坐标")
+        self.add_mode.set(True)
+        self.status_var.set(f"当前元素：{symbol}，点击画布放置")
         try:
             self.periodic_window.destroy()
         except Exception:
@@ -412,15 +417,69 @@ class HouEditor:
         self.render()
 
     def on_drag_start(self, event):
-        self.drag = (event.x, event.y, self.rx, self.ry)
+        self.drag = (event.x, event.y, self.rx, self.ry, False)
 
     def on_drag_move(self, event):
         if not self.drag:
             return
-        x0, y0, rx0, ry0 = self.drag
+        x0, y0, rx0, ry0, moved = self.drag
+        if abs(event.x - x0) + abs(event.y - y0) > 4:
+            moved = True
+        self.drag = (x0, y0, rx0, ry0, moved)
         self.ry = ry0 + (event.x - x0) * .55
         self.rx = max(-89, min(89, rx0 - (event.y - y0) * .55))
         self.render()
+
+    def on_drag_end(self, event):
+        was_click = bool(self.drag) and not self.drag[4]
+        self.drag = None
+        if was_click and self.add_mode.get():
+            self.place_at_canvas(event.x, event.y)
+
+    def screen_to_fraction(self, sx, sy):
+        if not self.last_scene:
+            return None
+        scale, cx, cy, center, vec = self.last_scene
+        rx, ry = math.radians(self.rx), math.radians(self.ry)
+        x1 = (sx - cx) / scale
+        y2 = -(sy - cy) / scale
+        z2 = 0.0
+        y = y2 * math.cos(rx) + z2 * math.sin(rx)
+        z1 = -y2 * math.sin(rx) + z2 * math.cos(rx)
+        x = x1 * math.cos(ry) - z1 * math.sin(ry)
+        z = x1 * math.sin(ry) + z1 * math.cos(ry)
+        world = [x + center[i] for i in range(3)]
+        a, b, c = vec
+
+        def dot(u, v):
+            return sum(u[i] * v[i] for i in range(3))
+
+        def cross(u, v):
+            return [u[1] * v[2] - u[2] * v[1],
+                    u[2] * v[0] - u[0] * v[2],
+                    u[0] * v[1] - u[1] * v[0]]
+
+        det = dot(a, cross(b, c))
+        if abs(det) < 1e-8:
+            return None
+        frac = [dot(world, cross(b, c)) / det,
+                dot(world, cross(c, a)) / det,
+                dot(world, cross(a, b)) / det]
+        return [round(v * 8) / 8 for v in frac]
+
+    def place_at_canvas(self, sx, sy):
+        frac = self.screen_to_fraction(sx, sy)
+        if not frac:
+            return
+        element = self.element_var.get().strip() or "C"
+        self.atoms.append({"element": element, "x": frac[0], "y": frac[1], "z": frac[2]})
+        self.refresh_tree()
+        self.tree.selection_set(str(len(self.atoms) - 1))
+        self.x_var.set(f"{frac[0]:g}")
+        self.y_var.set(f"{frac[1]:g}")
+        self.z_var.set(f"{frac[2]:g}")
+        self.render()
+        self.status_var.set(f"已放置 {element} 到 ({frac[0]:g}, {frac[1]:g}, {frac[2]:g})")
 
     def on_wheel(self, event):
         self.zoom_by(1.08 if event.delta > 0 else .92)
@@ -445,6 +504,7 @@ class HouEditor:
         radius = max(1.0, max(math.sqrt(sum(v * v for v in p)) for p in rel))
         scale = min(w, h) * .38 / radius * self.zoom
         cx, cy = w / 2, h / 2
+        self.last_scene = (scale, cx, cy, center, vec)
 
         def proj(p):
             q = rotate(p, self.rx, self.ry)

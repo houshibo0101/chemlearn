@@ -12,6 +12,7 @@
         <el-button :icon="Download" @click="downloadHou">保存 .hou</el-button>
         <el-button :icon="Upload" @click="triggerOpen">打开 .hou</el-button>
         <input ref="fileInput" type="file" accept=".hou,application/json" style="display:none" @change="loadHou" />
+        <el-checkbox v-model="addMode">点空白添加原子</el-checkbox>
         <span class="hou-toolbar__hint">左键拖动旋转 · 滚轮缩放</span>
         <div class="hou-toolbar__right">
           <el-button @click="resetView">重置视角</el-button>
@@ -80,13 +81,16 @@
           <canvas
             ref="canvas"
             class="hou-canvas"
+            :class="{ 'hou-canvas--add': addMode }"
             @pointerdown="onPointerDown"
             @pointermove="onPointerMove"
-            @pointerup="endDrag"
+            @pointerup="onPointerUp"
             @pointerleave="endDrag"
             @wheel.prevent="onWheel"
           />
-          <div class="hou-canvas__hint">拖动旋转晶胞 · 滚轮缩放</div>
+          <div class="hou-canvas__hint">
+            {{ addMode ? '点击画布放置 ' + (newAtom.element || '原子') + ' · 拖动仍然旋转' : '拖动旋转晶胞 · 滚轮缩放' }}
+          </div>
         </div>
       </div>
     </div>
@@ -120,6 +124,7 @@ const canvas = ref(null)
 const canvasWrap = ref(null)
 const fileInput = ref(null)
 const drawing = ref(false)
+const addMode = ref(false)
 const exporting = ref(false)
 const showPeriodic = ref(false)
 
@@ -133,6 +138,7 @@ const newAtom = reactive({ element: 'Na', x: 0, y: 0, z: 0 })
 let atomSeq = 0
 let drag = null
 let resizeObserver = null
+let lastScene = null
 
 const presetText = computed(() => ({
   cubic: 'a = b = c，α = β = γ = 90°',
@@ -186,6 +192,53 @@ function project(p, scale, cx, cy) {
   return { x: cx + q[0] * scale, y: cy - q[1] * scale, z: q[2] }
 }
 
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+const cross = (a, b) => [
+  a[1] * b[2] - a[2] * b[1],
+  a[2] * b[0] - a[0] * b[2],
+  a[0] * b[1] - a[1] * b[0],
+]
+
+function screenToFraction(clientX, clientY) {
+  const el = canvas.value
+  if (!el || !lastScene) return null
+  const rect = el.getBoundingClientRect()
+  const sx = clientX - rect.left
+  const sy = clientY - rect.top
+  const rx = view.rx * Math.PI / 180
+  const ry = view.ry * Math.PI / 180
+  const x1 = (sx - lastScene.centerX) / lastScene.scale
+  const y2 = -(sy - lastScene.centerY) / lastScene.scale
+  const z2 = 0
+  const y = y2 * Math.cos(rx) + z2 * Math.sin(rx)
+  const z1 = -y2 * Math.sin(rx) + z2 * Math.cos(rx)
+  const x = x1 * Math.cos(ry) - z1 * Math.sin(ry)
+  const z = x1 * Math.sin(ry) + z1 * Math.cos(ry)
+  const world = [x + lastScene.center[0], y + lastScene.center[1], z + lastScene.center[2]]
+  const { a, b, c } = lastScene.vecs
+  const det = dot(a, cross(b, c))
+  if (Math.abs(det) < 1e-8) return null
+  const round = (v) => Math.round(v * 8) / 8
+  return [
+    round(dot(world, cross(b, c)) / det),
+    round(dot(world, cross(c, a)) / det),
+    round(dot(world, cross(a, b)) / det),
+  ]
+}
+
+function placeAtomAtPointer(event) {
+  if (!addMode.value) return
+  const frac = screenToFraction(event.clientX, event.clientY)
+  if (!frac) return
+  const element = String(newAtom.element || '').trim() || 'C'
+  atoms.value.push(makeAtom(element, frac[0], frac[1], frac[2]))
+  newAtom.x = frac[0]
+  newAtom.y = frac[1]
+  newAtom.z = frac[2]
+  render()
+  ElMessage.success(`已放置 ${element} 到 (${frac.map((v) => v.toFixed(3)).join(', ')})`)
+}
+
 function computeScene() {
   const vecs = latticeVectors(lattice)
   const corners = []
@@ -237,8 +290,6 @@ function render(w = W, h = H) {
   ctx.fillRect(0, 0, cw, ch)
 
   // 用实际 canvas 尺寸重算投影，保证宽屏/窄屏居中
-  const savedW = W, savedH = H
-  const old = { cx: W / 2, cy: H / 2 }
   const vecs = latticeVectors(lattice)
   const cornerCart = []
   for (const x of [0, 1]) for (const y of [0, 1]) for (const z of [0, 1]) {
@@ -249,6 +300,7 @@ function render(w = W, h = H) {
   const radius = Math.max(1, ...shifted.map((p) => Math.hypot(...p)))
   const scale = Math.min(cw, ch) * 0.38 / radius * view.zoom
   const centerX = cw / 2, centerY = ch / 2
+  lastScene = { scale, centerX, centerY, center, vecs }
   const corners = shifted.map((p) => project(p, scale, centerX, centerY))
 
   ctx.strokeStyle = '#94a3b8'
@@ -314,16 +366,22 @@ function render(w = W, h = H) {
 }
 
 function onPointerDown(e) {
-  drag = { x: e.clientX, y: e.clientY, rx: view.rx, ry: view.ry }
+  drag = { x: e.clientX, y: e.clientY, rx: view.rx, ry: view.ry, moved: false }
   canvas.value.setPointerCapture?.(e.pointerId)
   drawing.value = true
 }
 function onPointerMove(e) {
   if (!drag) return
+  if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > 4) drag.moved = true
   view.ry = drag.ry + (e.clientX - drag.x) * 0.55
   view.rx = drag.rx - (e.clientY - drag.y) * 0.55
   view.rx = Math.max(-89, Math.min(89, view.rx))
   render()
+}
+function onPointerUp(e) {
+  const wasClick = drag && !drag.moved
+  endDrag()
+  if (wasClick && addMode.value) placeAtomAtPointer(e)
 }
 function endDrag() { drag = null; drawing.value = false }
 function onWheel(e) {
@@ -413,8 +471,9 @@ const addAtom = () => {
 
 const chooseElement = (symbol) => {
   newAtom.element = symbol
+  addMode.value = true
   showPeriodic.value = false
-  ElMessage.success(`已选择 ${symbol}，填写坐标后点「添加」`)
+  ElMessage.success(`已选择 ${symbol}，点击画布放置原子`)
 }
 const removeAtom = (i) => { atoms.value.splice(i, 1); render() }
 
@@ -560,6 +619,8 @@ onBeforeUnmount(() => {
   touch-action: none; cursor: grab;
 }
 .hou-canvas:active { cursor: grabbing; }
+.hou-canvas--add { cursor: crosshair; }
+.hou-canvas--add:active { cursor: crosshair; }
 .hou-canvas__hint {
   position: absolute; right: 12px; bottom: 10px; font-size: 11px;
   color: var(--text-placeholder); background: rgba(255,255,255,.8);
