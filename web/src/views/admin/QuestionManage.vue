@@ -152,6 +152,7 @@
           <div style="width:100%;">
             <div style="margin-bottom:10px;">
               <el-button :icon="EditPen" @click="openKetcher">画结构式 / 导入 KingDraw</el-button>
+              <el-button :icon="Grid" @click="showCrystal = true">画晶胞</el-button>
               <span class="ketcher-hint">支持 KingDraw 导出的 .cdx / .mol，画完插入为题目图片</span>
             </div>
             <div v-if="imageList.length > 0" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
@@ -222,6 +223,8 @@
         </div>
       </div>
     </el-dialog>
+
+    <CrystalCellEditor v-model="showCrystal" @insert="handleCrystalInsert" />
   </div>
 </template>
 
@@ -230,10 +233,11 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import api from '@/api'
 import MathText from '@/components/MathText.vue'
 import ChemSymbolBar from '@/components/ChemSymbolBar.vue'
+import CrystalCellEditor from '@/components/CrystalCellEditor.vue'
 import { insertAtActiveInput } from '@/utils/input'
 import { mediaUrl } from '@/utils/media'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Delete, Download, Upload, Document, EditPen, Loading } from '@element-plus/icons-vue'
+import { Plus, Delete, Download, Upload, Document, EditPen, Loading, Grid } from '@element-plus/icons-vue'
 
 const list = ref([])
 const total = ref(0)
@@ -249,6 +253,7 @@ const fileInput = ref(null)
 const importing = ref(false)
 const imageList = ref([])
 const showKetcher = ref(false)
+const showCrystal = ref(false)
 const ketcherFrame = ref(null)
 const ketcherFileInput = ref(null)
 const ketcherSaving = ref(false)
@@ -431,6 +436,23 @@ const beforeImageUpload = (file) => {
   if (!isImage) { ElMessage.error('只能上传图片文件'); return false }
   if (!isLt5M) { ElMessage.error('图片大小不能超过5MB'); return false }
   return true
+}
+
+const handleCrystalInsert = async ({ blob, filename }) => {
+  if (!blob) return
+  try {
+    const formData = new FormData()
+    formData.append('file', new File([blob], filename || `crystal-${Date.now()}.png`, { type: 'image/png' }))
+    const res = await api.post('/questions/upload-image', formData)
+    if (res?.url) {
+      imageList.value.push(res.url)
+      ElMessage.success('晶胞图片已插入题目')
+    } else {
+      ElMessage.error('晶胞图片上传失败')
+    }
+  } catch {
+    ElMessage.error('晶胞图片上传失败，请重试')
+  }
 }
 
 const handleImageSuccess = (res) => {
