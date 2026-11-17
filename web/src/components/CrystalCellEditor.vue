@@ -542,10 +542,14 @@ onBeforeUnmount(() => {
 .hou-empty { padding: 14px 4px; color: var(--text-placeholder); font-size: 12px; }
 .hou-count { margin-top: 8px; font-size: 11px; color: var(--text-placeholder); }
 .hou-canvas-wrap {
-  flex: 1; min-width: 0; min-height: 440px; border: 1px solid var(--border-color);
-  border-radius: 10px; overflow: hidden; background: #fff; position: relative;
+  flex: 1; min-width: 0; height: min(62vh, 620px); max-height: 62vh;
+  border: 1px solid var(--border-color); border-radius: 10px;
+  overflow: hidden; background: #fff; position: relative;
 }
-.hou-canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+.hou-canvas {
+  position: absolute; inset: 0; display: block; width: 100%; height: 100%;
+  touch-action: none; cursor: grab;
+}
 .hou-canvas:active { cursor: grabbing; }
 .hou-canvas__hint {
   position: absolute; right: 12px; bottom: 10px; font-size: 11px;
@@ -554,7 +558,7 @@ onBeforeUnmount(() => {
 }
 @media (max-width: 900px) {
   .hou-main { flex-direction: column; }
-  .hou-panel { width: auto; max-height: 40vh; }
-  .hou-canvas-wrap { min-height: 360px; }
+  .hou-panel { width: auto; max-height: 36vh; }
+  .hou-canvas-wrap { height: 44vh; max-height: 44vh; min-height: 300px; }
 }
 </style>
