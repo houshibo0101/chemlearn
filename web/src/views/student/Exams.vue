@@ -32,9 +32,9 @@
     <!-- 考试界面 -->
     <el-dialog v-model="showExam" :title="`${currentExam?.title} - 倒计时 ${formatTime(remaining)}`" width="900px" :close-on-click-modal="false" :close-on-press-escape="false" @close="confirmClose">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-        <span style="font-size:12px;color:var(--text-secondary);">化学符号：</span>
-        <ChemSymbolBar @insert="insertSymbol" />
-        <span style="font-size:11.5px;color:var(--text-placeholder);">先点答案框，再点 ↑ 气体 / ↓ 沉淀</span>
+        <span style="font-size:12px;color:var(--text-secondary);">化学符号 / 公式：</span>
+        <ChemSymbolBar @insert="insertSymbol" @fraction="insertFraction" />
+        <span style="font-size:11.5px;color:var(--text-placeholder);">先点答案框，再点 ↑ 气体 / ↓ 沉淀；分数线可先填分子再填分母</span>
       </div>
       <div v-if="currentExam" class="exam-content">
         <div class="exam-info">
@@ -185,7 +185,7 @@ import api from '@/api'
 import MathText from '@/components/MathText.vue'
 import ChemSymbolBar from '@/components/ChemSymbolBar.vue'
 import ScratchPad from '@/components/ScratchPad.vue'
-import { insertAtActiveInput } from '@/utils/input'
+import { insertAtActiveInput, insertFractionAtActiveInput } from '@/utils/input'
 import { mediaUrl } from '@/utils/media'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -195,6 +195,12 @@ const loading = ref(false)
 const insertSymbol = (text) => {
   if (!insertAtActiveInput(text)) {
     ElMessage.info('请先点一下答案输入框，再点符号')
+  }
+}
+
+const insertFraction = () => {
+  if (!insertFractionAtActiveInput()) {
+    ElMessage.info('请先点一下答案输入框，再点分数线')
   }
 }
 const showExam = ref(false)

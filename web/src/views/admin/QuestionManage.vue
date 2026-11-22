@@ -69,9 +69,9 @@
     <!-- 编辑/创建弹窗 -->
     <el-dialog v-model="dialogVisible" :title="editing ? '编辑题目' : '上传题目'" width="90%" top="5vh">
       <div class="chem-insert-bar">
-        <span class="chem-insert-bar__label">化学符号：</span>
-        <ChemSymbolBar @insert="insertSymbol" />
-        <span class="chem-insert-bar__hint">点一下要输入的框，再点符号；H2 会自动变 H₂</span>
+        <span class="chem-insert-bar__label">符号 / 公式：</span>
+        <ChemSymbolBar @insert="insertSymbol" @fraction="insertFraction" />
+        <span class="chem-insert-bar__hint">点一下要输入的框，再点符号；条件按钮会插入 <code>\ce{=[点燃]}</code>，等号上方显示条件；也可以输入任意自定义条件；H2 会自动变 H₂</span>
       </div>
       <el-form :model="form" label-width="90px" size="default">
         <el-form-item label="题目标题" required>
@@ -234,7 +234,7 @@ import api from '@/api'
 import MathText from '@/components/MathText.vue'
 import ChemSymbolBar from '@/components/ChemSymbolBar.vue'
 import CrystalCellEditor from '@/components/CrystalCellEditor.vue'
-import { insertAtActiveInput } from '@/utils/input'
+import { insertAtLastTextInput, insertFractionAtActiveInput } from '@/utils/input'
 import { mediaUrl } from '@/utils/media'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Delete, Download, Upload, Document, EditPen, Loading, Grid } from '@element-plus/icons-vue'
@@ -404,8 +404,14 @@ const resetForm = () => {
 }
 
 const insertSymbol = (text) => {
-  if (!insertAtActiveInput(text)) {
+  if (!insertAtLastTextInput(text)) {
     ElMessage.info('请先点一下要输入的题目框，再点符号')
+  }
+}
+
+const insertFraction = () => {
+  if (!insertFractionAtActiveInput()) {
+    ElMessage.info('请先点一下要输入的题目框，再点分数线')
   }
 }
 

@@ -248,6 +248,60 @@ TEMPLATE = r"""<!DOCTYPE html>
   .btn--ghost { background: #fff; color: var(--text-2); border: 1px solid var(--line); font-weight: 500; }
   .btn--sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
 
+  /* ---------- 分数渲染（离线可用，不引 KaTeX） ---------- */
+  .mfrac {
+    display: inline-flex; flex-direction: column; align-items: center;
+    vertical-align: middle; margin: 0 2px; font-size: .95em; line-height: 1.15;
+  }
+  .mfrac__n { padding: 0 .3em .05em; border-bottom: 1px solid currentColor; }
+  .mfrac__d { padding: .05em .3em 0; }
+  .mcond {
+    display: inline-flex; flex-direction: column; align-items: center;
+    vertical-align: middle; margin: 0 2px; line-height: 1.05;
+  }
+  .mcond__txt { font-size: .68em; color: var(--text-2); white-space: nowrap; }
+  .mcond__arrow { font-size: 1.05em; }
+
+  /* ---------- 符号 / 分数线 插入 ---------- */
+  .blank-prev {
+    display: none; margin-top: 6px; padding: 6px 10px;
+    background: #F8FAFC; border: 1px dashed var(--line); border-radius: 8px;
+    font-size: 13px; color: var(--text-2);
+  }
+  .blank-prev.show { display: block; }
+  .sym-panel {
+    position: absolute; left: 0; right: 0; bottom: 100%;
+    background: rgba(255,255,255,.98); border-top: 1px solid var(--line);
+    padding: 8px 16px; display: none;
+  }
+  .sym-panel.open { display: block; }
+  .sym-panel__in {
+    max-width: 860px; margin: 0 auto; display: flex; flex-wrap: wrap;
+    gap: 6px; align-items: center;
+  }
+  .sym-panel__hint { font-size: 12px; color: var(--text-3); margin-right: 2px; }
+  .sym-btn {
+    min-height: 32px; padding: 2px 10px; border-radius: 8px;
+    background: #fff; border: 1px solid var(--line); color: var(--text);
+    font-size: 15px; line-height: 1.2;
+  }
+  .sym-btn:hover { border-color: var(--brand); color: var(--brand-dark); }
+  .sym-input {
+    height: 30px; width: 120px; padding: 0 8px;
+    border: 1px solid var(--line); border-radius: 8px;
+    background: #fff; color: var(--text); font-size: 12px; outline: none;
+  }
+  .sym-input:focus { border-color: var(--brand); }
+  .sym-btn--frac {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; border-style: dashed;
+  }
+  .frac-ico {
+    display: inline-flex; flex-direction: column; align-items: center;
+    font-size: 9px; line-height: 1.05; font-weight: 700;
+  }
+  .frac-ico i { display: block; width: 12px; border-top: 1.4px solid currentColor; margin: 1px 0; }
+
   /* ---------- 成绩卡 ---------- */
   .result {
     background: var(--card); border: 1px solid var(--line); border-radius: 14px;
@@ -301,8 +355,35 @@ TEMPLATE = r"""<!DOCTYPE html>
 </div>
 
 <div class="submit-bar" id="submitBar">
+  <div class="sym-panel" id="symPanel">
+    <div class="sym-panel__in">
+      <span class="sym-panel__hint">先点一下答案框，再点下面：</span>
+      <button class="sym-btn" type="button" data-sym="↑" title="气体">↑</button>
+      <button class="sym-btn" type="button" data-sym="↓" title="沉淀">↓</button>
+      <button class="sym-btn" type="button" data-sym="→" title="箭头">→</button>
+      <button class="sym-btn" type="button" data-sym="⇌" title="可逆">⇌</button>
+      <button class="sym-btn" type="button" data-sym="Δ" title="加热">Δ</button>
+      <button class="sym-btn" type="button" data-sym="·" title="结晶水">·</button>
+      <button class="sym-btn" type="button" data-sym="⁺" title="正电荷">⁺</button>
+      <button class="sym-btn" type="button" data-sym="⁻" title="负电荷">⁻</button>
+      <span class="sym-panel__hint">条件：</span>
+      <button class="sym-btn" type="button" data-cond="点燃" title="等号上方写点燃">点燃</button>
+      <button class="sym-btn" type="button" data-cond="加热" title="等号上方写加热">加热条件</button>
+      <button class="sym-btn" type="button" data-cond="高温" title="等号上方写高温">高温</button>
+      <button class="sym-btn" type="button" data-cond="催化剂" title="等号上方写催化剂">催化剂</button>
+      <button class="sym-btn" type="button" data-cond="电解" title="等号上方写电解">电解</button>
+      <button class="sym-btn" type="button" data-cond="光照" title="等号上方写光照">光照</button>
+      <input id="condCustom" class="sym-input" maxlength="24" placeholder="自定义条件" aria-label="自定义条件" />
+      <button class="sym-btn" type="button" id="btnCondCustom" title="把自定义条件写到等号上方">插入条件</button>
+      <button class="sym-btn sym-btn--frac" type="button" id="btnFrac" title="插入分数线（选中 1/2 可直接变上下两行）">
+        <span class="frac-ico"><span>a</span><i></i><span>b</span></span>
+        <span>分数线</span>
+      </button>
+    </div>
+  </div>
   <div class="submit-bar__in">
     <div class="submit-bar__stat">已答 <b id="doneCount">0</b> / <span id="totalCount">0</span> 题</div>
+    <button class="btn btn--ghost btn--sm" id="btnSym" type="button">符号 / 分数线</button>
     <button class="btn" id="btnSubmit">交卷并判分</button>
   </div>
 </div>
@@ -402,11 +483,12 @@ function subQuestionsHtml(subs, qNo, prefix, depth) {
         '<span class="sub-q__no">小问 ' + label + '</span>' +
         '<span class="sub-q__score">' + (sub.score || 0) + ' 分</span>' +
       '</div>' +
-      (sub.content ? '<div class="sub-q__content">' + esc(sub.content) + '</div>' : '') +
+      (sub.content ? '<div class="sub-q__content">' + renderMathLite(sub.content) + '</div>' : '') +
       (children.length
         ? childHtml
         : '<textarea class="blank sub-blank" data-no="' + qNo + '" data-sub="' + path +
-          '" placeholder="小问 ' + label + ' 答案" rows="2"></textarea>') +
+          '" placeholder="小问 ' + label + ' 答案" rows="2"></textarea>' +
+          '<div class="blank-prev"></div>') +
       '</div>';
   }).join('') + '</div>';
 }
@@ -425,7 +507,7 @@ function renderList() {
         const key = o.key || o.value || '';
         const text = o.text || o.value || '';
         return '<div class="opt" data-no="' + q.no + '" data-key="' + key + '">' +
-               '<div class="opt__key">' + key + '</div><div>' + esc(text) + '</div></div>';
+               '<div class="opt__key">' + key + '</div><div>' + renderMathLite(text) + '</div></div>';
       }).join('') + '</div>';
     }
     let blankHtml = '';
@@ -435,7 +517,8 @@ function renderList() {
         blankHtml = subQuestionsHtml(subs, q.no, '', 0);
       } else {
         blankHtml = '<textarea class="blank" data-no="' + q.no +
-          '" placeholder="在这里写你的答案（填空/计算/简答）" rows="2"></textarea>';
+          '" placeholder="在这里写你的答案（填空/计算/简答）" rows="2"></textarea>' +
+          '<div class="blank-prev"></div>';
       }
     }
 
@@ -468,8 +551,8 @@ function renderList() {
         '<span class="q__score">' + (q.score || 0) + ' 分</span>' +
         '<span id="tag' + q.no + '"></span>' +
       '</div>' +
-      '<div class="q__title">' + esc(q.title || '') + '</div>' +
-      (q.content ? '<div class="q__content">' + esc(q.content) + '</div>' : '') +
+      '<div class="q__title">' + renderMathLite(q.title || '') + '</div>' +
+      (q.content ? '<div class="q__content">' + renderMathLite(q.content) + '</div>' : '') +
       figHtml + optsHtml + blankHtml +
       '<div id="ans' + q.no + '"></div>';
 
@@ -500,6 +583,7 @@ function renderList() {
   // 填空输入（含多个小问）
   document.querySelectorAll('.blank').forEach((el) => {
     el.oninput = () => {
+      updateBlankPreview(el);
       if (state.finished) return;
       const no = el.dataset.no;
       const sub = el.dataset.sub;
@@ -516,9 +600,71 @@ function renderList() {
   });
 }
 
+/* 输入框下方的分数预览：只有写了公式才显示 */
+function updateBlankPreview(el) {
+  if (!el) return;
+  const prev = el.nextElementSibling;
+  if (!prev || !prev.classList.contains('blank-prev')) return;
+  const hasFormula = !!el.value && el.value.indexOf('\\') >= 0;
+  prev.innerHTML = hasFormula ? renderMathLite(el.value) : '';
+  prev.classList.toggle('show', hasFormula);
+}
+
 function esc(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/* 轻量公式渲染：只把 $\frac{分子}{分母}$ 画成上下两行，其余文字原样转义。
+   套卷页保持单文件、离线可用，所以不引 KaTeX。 */
+function renderMathLite(text) {
+  const src = String(text == null ? '' : text).replace(/\$([^$\n]+)\$/g, '$1');
+  let i = 0;
+
+  function group() {
+    if (src[i] !== '{') return null;
+    i += 1;
+    return parse(true);
+  }
+
+  function parse(stop) {
+    let html = '';
+    let buf = '';
+    const flush = () => { if (buf) { html += esc(buf); buf = ''; } };
+    while (i < src.length) {
+      const ch = src[i];
+      if (stop && ch === '}') { i += 1; flush(); return html; }
+      if (ch === '\\' && src.substr(i, 5) === '\\frac') {
+        const save = i;
+        i += 5;
+        const num = group();
+        const den = num == null ? null : group();
+        if (num == null || den == null) { i = save + 1; buf += '\\'; continue; }
+        flush();
+        html += '<span class="mfrac"><span class="mfrac__n">' + num +
+                '</span><span class="mfrac__d">' + den + '</span></span>';
+        continue;
+      }
+      if (ch === '\\' && src.substr(i, 6) === '\\ce{=[') {
+        const end = src.indexOf(']}', i + 6);
+        if (end > 0) {
+          const condition = src.slice(i + 6, end);
+          flush();
+          html += '<span class="mcond"><span class="mcond__txt">' + esc(condition) +
+                  '</span><span class="mcond__arrow">=</span></span>';
+          i = end + 2;
+          continue;
+        }
+      }
+      buf += ch;
+      i += 1;
+    }
+    flush();
+    return stop ? null : html;
+  }
+
+  const html = parse(false);
+  return html == null ? esc(src) : html;
 }
 
 /* ---------- 倒计时：以服务端给的截止时间为准 ----------
@@ -710,12 +856,12 @@ function showResult(d, used) {
     }
     const mineIsObj = item.mine && typeof item.mine === 'object';
     const mineText = mineIsObj
-      ? Object.values(item.mine).filter((v) => String(v || '').trim()).map((v) => esc(v)).join('；') || '未作答'
-      : (hasAnswer(item.mine) ? esc(String(item.mine)) : '未作答');
+      ? Object.values(item.mine).filter((v) => String(v || '').trim()).map((v) => renderMathLite(v)).join('；') || '未作答'
+      : (hasAnswer(item.mine) ? renderMathLite(String(item.mine)) : '未作答');
     const subHtml = (item.sub_results || []).map(function (sub, i) {
       const label = sub.path || (i + 1);
       return '<div class="ans__row">小问 ' + label + '：' +
-        (sub.mine ? esc(sub.mine) : '未作答') +
+        (sub.mine ? renderMathLite(sub.mine) : '未作答') +
         (sub.ok ? ' <span class="ok">✓</span>' : ' <span class="no">✗</span>') +
         ' <span style="color:var(--text-3);font-size:12px;">得分 ' + (sub.earned || 0) + '/' + (sub.score || 0) + '</span></div>';
     }).join('');
@@ -724,8 +870,8 @@ function showResult(d, used) {
         '<div class="ans__row">你的答案：<b class="' + (item.ok === true ? 'ok' : item.ok === false ? 'no' : '') + '">' +
           mineText + '</b></div>' +
         subHtml +
-        '<div class="ans__row">正确答案：<b class="ok">' + esc(item.answer || '—') + '</b></div>' +
-        (q.analysis ? '<div class="ans__row">解析：' + esc(q.analysis) + '</div>' : '') +
+        '<div class="ans__row">正确答案：<b class="ok">' + renderMathLite(item.answer || '—') + '</b></div>' +
+        (q.analysis ? '<div class="ans__row">解析：' + renderMathLite(q.analysis) + '</div>' : '') +
         (item.reason ? '<div class="ans__row ans__reason">判分说明：' + esc(item.reason) + '</div>' : '') +
       '</div>';
   });
@@ -733,6 +879,7 @@ function showResult(d, used) {
   $('submitBar').style.display = 'none';
   // 交卷后锁住填空框，避免看起来还能改
   document.querySelectorAll('.blank').forEach((el) => { el.readOnly = true; });
+  document.querySelectorAll('.blank-prev').forEach((el) => el.classList.remove('show'));
   document.getElementById('btnSubmit') && (document.getElementById('btnSubmit').style.display = 'none');
   document.getElementById('btnTop') && (document.getElementById('btnTop').style.display = 'none');
   box.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -770,6 +917,91 @@ document.addEventListener('click', (event) => {
 $('imgViewerClose').addEventListener('click', closeImageViewer);
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && imgViewer.classList.contains('open')) closeImageViewer();
+});
+
+/* ---------- 符号 / 分数线插入 ---------- */
+let activeBlank = null;
+document.addEventListener('focusin', (event) => {
+  const el = event.target;
+  if (el && el.classList && el.classList.contains('blank')) activeBlank = el;
+});
+
+function insertAtBlank(text, caretOffset) {
+  const el = activeBlank;
+  if (!el || el.readOnly || state.finished) {
+    toast('请先点一下答案框，再点符号');
+    return;
+  }
+  const start = typeof el.selectionStart === 'number' ? el.selectionStart : el.value.length;
+  const end = typeof el.selectionEnd === 'number' ? el.selectionEnd : start;
+  el.setRangeText(text, start, end, 'end');
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+  el.focus();
+  try {
+    const pos = Math.min(start + caretOffset, el.value.length);
+    el.setSelectionRange(pos, pos);
+  } catch (err) { /* 忽略不支持选区的输入框 */ }
+}
+
+function insertFraction() {
+  const el = activeBlank;
+  if (!el || el.readOnly || state.finished) {
+    toast('请先点一下答案框，再点分数线');
+    return;
+  }
+  const start = typeof el.selectionStart === 'number' ? el.selectionStart : el.value.length;
+  const end = typeof el.selectionEnd === 'number' ? el.selectionEnd : start;
+  const picked = el.value.slice(start, end).trim();
+  const slash = picked.indexOf('/');
+  let latex;
+  let caret;
+  if (picked && slash > 0 && slash === picked.lastIndexOf('/')) {
+    // 选中 "1/2" 这类写法：直接拆成分子分母
+    latex = '$\\frac{' + picked.slice(0, slash).trim() + '}{' + picked.slice(slash + 1).trim() + '}$';
+    caret = latex.length;
+  } else if (picked) {
+    // 选中一段文字：当分子，光标进分母
+    latex = '$\\frac{' + picked + '}{}$';
+    caret = latex.length - 2;
+  } else {
+    // 没选中：插空分数，光标进分子
+    latex = '$\\frac{}{}$';
+    caret = 7;
+  }
+  insertAtBlank(latex, caret);
+}
+
+const symPanel = $('symPanel');
+$('btnSym').addEventListener('click', () => {
+  symPanel.classList.toggle('open');
+});
+document.querySelectorAll('.sym-btn').forEach((btn) => {
+  // 用 pointerdown 阻止默认行为，别把答案框的焦点和光标抢走
+  btn.addEventListener('pointerdown', (event) => event.preventDefault());
+  btn.addEventListener('click', () => {
+    if (btn.id === 'btnCondCustom') return;
+    if (btn.id === 'btnFrac') { insertFraction(); return; }
+    const cond = btn.getAttribute('data-cond');
+    if (cond) {
+      const expr = '\\ce{=[' + cond + ']}';
+      insertAtBlank(expr, expr.length);
+      return;
+    }
+    const sym = btn.getAttribute('data-sym') || btn.textContent;
+    insertAtBlank(sym, sym.length);
+  });
+});
+
+const condCustom = $('condCustom');
+$('btnCondCustom') && $('btnCondCustom').addEventListener('click', () => {
+  const cond = String(condCustom.value || '').trim().replace(/[\[\]\\]/g, '');
+  if (!cond) {
+    toast('先输入条件，例如：浓硫酸 / Δ');
+    return;
+  }
+  const expr = '\\ce{=[' + cond + ']}';
+  insertAtBlank(expr, expr.length);
+  condCustom.value = '';
 });
 
 /* ---------- 启动 ---------- */

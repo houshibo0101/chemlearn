@@ -169,7 +169,7 @@ export function renderFormula(value) {
   text = text.replace(/\\\(([^)]+?)\\\)/g, (_m, f) => stash(renderMath(f.trim(), false)))
   text = text.replace(/\$([^\n$]+?)\$/g, (_m, f) => stash(renderMath(f.trim(), false)))
   // 裸 \ce{...}（没写 $）自动按行内公式处理；前面是 $ 的交给上一步
-  text = text.replace(/(?<!\$)\\ce\{[^{}]*\}/g, (_m, f) => stash(renderMath(f.trim(), false)))
+  text = text.replace(/(?<!\$)(\\ce\{[^{}]*\})/g, (_m, f) => stash(renderMath(f.trim(), false)))
 
   // 普通文本里的化学式自动排版：H2 -> H₂、Ca(OH)2 -> Ca(OH)₂
   text = formatChemicalText(text)
