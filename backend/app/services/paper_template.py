@@ -645,14 +645,14 @@ function renderMathLite(text) {
                 '</span><span class="mfrac__d">' + den + '</span></span>';
         continue;
       }
-      if (ch === '\\' && src.substr(i, 6) === '\\ce{=[') {
-        const end = src.indexOf(']}', i + 6);
+      if (ch === '\\' && src.substr(i, 12) === '\\xlongequal{') {
+        const end = src.indexOf('}', i + 12);
         if (end > 0) {
-          const condition = src.slice(i + 6, end);
+          const condition = src.slice(i + 12, end);
           flush();
           html += '<span class="mcond"><span class="mcond__txt">' + esc(condition) +
                   '</span><span class="mcond__arrow">=</span></span>';
-          i = end + 2;
+          i = end + 1;
           continue;
         }
       }
@@ -983,7 +983,7 @@ document.querySelectorAll('.sym-btn').forEach((btn) => {
     if (btn.id === 'btnFrac') { insertFraction(); return; }
     const cond = btn.getAttribute('data-cond');
     if (cond) {
-      const expr = '\\ce{=[' + cond + ']}';
+      const expr = '$\\xlongequal{' + cond + '}$';
       insertAtBlank(expr, expr.length);
       return;
     }
@@ -994,12 +994,12 @@ document.querySelectorAll('.sym-btn').forEach((btn) => {
 
 const condCustom = $('condCustom');
 $('btnCondCustom') && $('btnCondCustom').addEventListener('click', () => {
-  const cond = String(condCustom.value || '').trim().replace(/[\[\]\\]/g, '');
+  const cond = String(condCustom.value || '').trim().replace(/[\[\]{}\\]/g, '');
   if (!cond) {
     toast('先输入条件，例如：浓硫酸 / Δ');
     return;
   }
-  const expr = '\\ce{=[' + cond + ']}';
+  const expr = '$\\xlongequal{' + cond + '}$';
   insertAtBlank(expr, expr.length);
   condCustom.value = '';
 });

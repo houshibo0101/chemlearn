@@ -1,4 +1,4 @@
-# 化学学习系统 · ChemLearn
+﻿# 化学学习系统 · ChemLearn
 
 [![CI](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml/badge.svg)](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml)
 
@@ -34,7 +34,7 @@
 | 文件 | 平台 | 说明 |
 |---|---|---|
 | [ChemLearn-Deployer-v1.3.0.exe](https://github.com/houshibo0101/chemlearn/releases/tag/v1.3.0) | Linux 服务器 | 填 IP、SSH 密码和 AI Key，自动装好 nginx / Python / systemd，3–6 分钟完成 |
-| [ChemLearnWindows-v2.1.46.exe](https://github.com/houshibo0101/chemlearn/releases/tag/windows-v2.1.46) | Windows 本机 | 双击部署到本机，界面里看地址 / 开系统 / 重置，局域网可访问 |
+| [ChemLearnWindows-v2.1.47.exe](https://github.com/houshibo0101/chemlearn/releases/tag/windows-v2.1.47) | Windows 本机 | 双击部署到本机，界面里看地址 / 开系统 / 重置，局域网可访问 |
 | [题库数据包 453 题](https://github.com/houshibo0101/chemlearn/releases/tag/question-bank-v1) | 通用 | 解压到 `backend/import_data/` 后跑导入脚本 |
 
 > Linux 部署器内置完整部署包（源码 + 前端 + 依赖清单），目标机只需能联网的 Ubuntu / Debian。
@@ -92,7 +92,7 @@
 - 结晶水 `CuSO4·5H2O`、有机物 `CH3COOH` 同样识别
 - 电荷用 `^`：`Fe^3+` → Fe³⁺，`SO4^2-` → SO₄²⁻
 - 也支持 LaTeX：行内 `$H_2SO_4$`，块级 `$$\Delta H < 0$$`，化学式 `\ce{2Na + 2H2O -> 2NaOH + H2 ^}`
-- 条件写在等号上方：`\ce{2H2 + O2 =[点燃] 2H2O}`；题库编辑器和套卷答题页的符号栏可直接点「点燃/加热/高温/催化剂/电解/光照」，也可以输入任意自定义条件后插入
+- 条件写在等号上方：`$\xlongequal{点燃}$`；题库编辑器和套卷答题页的符号栏可直接点「点燃/加热/高温/催化剂/电解/光照」，也可以输入任意自定义条件后插入
 
 自动排版只改变显示，数据库仍保存原文，因此答案判分不受影响；手动录入（编辑框有实时预览）、批量导入、作业/考试答题预览都会生效。**正确答案**字段下方同样有实时预览，答题结果页的正确答案也会自动排版。
 

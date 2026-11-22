@@ -51,9 +51,9 @@ const customCondition = ref('')
 const insertCustom = () => {
   const condition = String(customCondition.value || '').trim()
   if (!condition) return
-  const safe = condition.replace(/[\[\]\\]/g, '')
+  const safe = condition.replace(/[\[\]{}\\]/g, '')
   if (!safe) return
-  emit('insert', `\\ce{=[${safe}]}`)
+  emit('insert', `$\\xlongequal{${safe}}$`)
   customCondition.value = ''
 }
 
@@ -83,7 +83,7 @@ const conditionText = (condition) => (condition === '\\Delta' ? 'Δ' : condition
 
 const pick = (item) => {
   if (item.fraction) emit('fraction')
-  else if (item.condition) emit('insert', `\\ce{=[${item.condition}]}`)
+  else if (item.condition) emit('insert', `$\\xlongequal{${item.condition}}$`)
   else emit('insert', item.text)
 }
 </script>

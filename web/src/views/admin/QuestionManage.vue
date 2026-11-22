@@ -71,7 +71,7 @@
       <div class="chem-insert-bar">
         <span class="chem-insert-bar__label">符号 / 公式：</span>
         <ChemSymbolBar @insert="insertSymbol" @fraction="insertFraction" />
-        <span class="chem-insert-bar__hint">点一下要输入的框，再点符号；条件按钮会插入 <code>\ce{=[点燃]}</code>，等号上方显示条件；也可以输入任意自定义条件；H2 会自动变 H₂</span>
+        <span class="chem-insert-bar__hint">点一下要输入的框，再点符号；条件按钮会插入 <code>\xlongequal{点燃}</code>，等号上方显示条件；也可以输入任意自定义条件；H2 会自动变 H₂</span>
       </div>
       <el-form :model="form" label-width="90px" size="default">
         <el-form-item label="题目标题" required>
