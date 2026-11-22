@@ -16,7 +16,7 @@
         <span>b</span>
       </span>
       <span v-else-if="item.condition" class="chem-symbol-bar__glyph chem-symbol-bar__glyph--cond">
-        <span class="chem-symbol-bar__cond-text">{{ conditionText(item.condition) }}</span>
+        <span class="chem-symbol-bar__cond-text">{{ item.display || conditionText(item.condition) }}</span>
         <span class="chem-symbol-bar__cond-arrow">=</span>
       </span>
       <span v-else class="chem-symbol-bar__glyph">{{ item.text }}</span>
@@ -34,7 +34,7 @@
       <button
         type="button"
         class="chem-symbol-bar__custom-btn"
-        title="把自定义条件写到箭头上方"
+        title="把自定义条件写到等号上方"
         @pointerdown.prevent
         @click="insertCustom"
       >插入条件</button>
@@ -45,7 +45,7 @@
 <script setup>
 import { ref } from 'vue'
 
-const emit = defineEmits(['insert', 'fraction'])
+const emit = defineEmits(['insert', 'fraction', 'condition'])
 const customCondition = ref('')
 
 const insertCustom = () => {
@@ -53,7 +53,7 @@ const insertCustom = () => {
   if (!condition) return
   const safe = condition.replace(/[\[\]{}\\]/g, '')
   if (!safe) return
-  emit('insert', `$\\xlongequal{${safe}}$`)
+  emit('condition', safe)
   customCondition.value = ''
 }
 
@@ -72,7 +72,7 @@ const items = [
     title: '插入分数线：先选中 1/2 可直接变上下两行；选中文字则作分子，没选中就插空分数',
   },
   { condition: '点燃', label: '点燃', title: '插入等号上方条件：点燃' },
-  { condition: '\\Delta', label: '加热条件', title: '插入等号上方条件：加热（Δ）' },
+  { condition: '加热', display: 'Δ', label: '加热条件', title: '插入等号上方条件：加热（Δ）' },
   { condition: '高温', label: '高温', title: '插入等号上方条件：高温' },
   { condition: '催化剂', label: '催化剂', title: '插入等号上方条件：催化剂' },
   { condition: '电解', label: '电解', title: '插入等号上方条件：电解' },
@@ -83,7 +83,7 @@ const conditionText = (condition) => (condition === '\\Delta' ? 'Δ' : condition
 
 const pick = (item) => {
   if (item.fraction) emit('fraction')
-  else if (item.condition) emit('insert', `$\\xlongequal{${item.condition}}$`)
+  else if (item.condition) emit('condition', item.condition)
   else emit('insert', item.text)
 }
 </script>

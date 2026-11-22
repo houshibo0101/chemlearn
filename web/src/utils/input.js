@@ -36,6 +36,41 @@ export function insertAtLastTextInput(text, caretOffset) {
   return insertIntoInput(el, text, caretOffset)
 }
 
+/**
+ * 在等号上方插入条件：
+ * - 选中了 "="：直接把这个等号替换成带条件的等号
+ * - 光标前紧挨着 "="：替换前面的等号
+ * - 否则在光标处插入一个带条件的等号
+ */
+export function insertConditionAtLastTextInput(condition) {
+  const el = getLastTextInput()
+  if (!el) return false
+  const safe = String(condition || '').trim().replace(/[\\{}[\]]/g, '')
+  if (!safe) return false
+
+  const { start, end, value } = selectionOf(el)
+  let from = start
+  let to = end
+  let selected = value.slice(start, end)
+  if (!selected.trim()) {
+    let i = start - 1
+    while (i >= 0 && /\s/.test(value[i])) i -= 1
+    if (value[i] === '=') {
+      from = i
+      to = i + 1
+      selected = '='
+    }
+  } else if (selected.trim() === '=') {
+    // 选中等号，保持当前选区替换
+  }
+
+  const expr = `$\\overset{${safe}}{=}$`
+  replaceSelection(el, expr, from, to)
+  setCaret(el, from + expr.length)
+  el.focus()
+  return true
+}
+
 function insertIntoInput(el, text, caretOffset) {
   const { start, end } = selectionOf(el)
   replaceSelection(el, text, start, end)

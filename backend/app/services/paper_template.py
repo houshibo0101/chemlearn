@@ -645,14 +645,14 @@ function renderMathLite(text) {
                 '</span><span class="mfrac__d">' + den + '</span></span>';
         continue;
       }
-      if (ch === '\\' && src.substr(i, 12) === '\\xlongequal{') {
-        const end = src.indexOf('}', i + 12);
+      if (ch === '\\' && src.substr(i, 9) === '\\overset{') {
+        const end = src.indexOf('}{=}', i + 9);
         if (end > 0) {
-          const condition = src.slice(i + 12, end);
+          const condition = src.slice(i + 9, end);
           flush();
           html += '<span class="mcond"><span class="mcond__txt">' + esc(condition) +
                   '</span><span class="mcond__arrow">=</span></span>';
-          i = end + 1;
+          i = end + 4;
           continue;
         }
       }
@@ -971,6 +971,30 @@ function insertFraction() {
   insertAtBlank(latex, caret);
 }
 
+function insertCondition(condition) {
+  const el = activeBlank;
+  if (!el || el.readOnly || state.finished) {
+    toast('请先点一下答案框，再点条件');
+    return;
+  }
+  const start = typeof el.selectionStart === 'number' ? el.selectionStart : el.value.length;
+  const end = typeof el.selectionEnd === 'number' ? el.selectionEnd : start;
+  let from = start;
+  let to = end;
+  const picked = el.value.slice(start, end);
+  if (!picked.trim()) {
+    let i = start - 1;
+    while (i >= 0 && /\s/.test(el.value[i])) i -= 1;
+    if (el.value[i] === '=') {
+      from = i;
+      to = i + 1;
+    }
+  }
+  const expr = '$\\overset{' + condition + '}{=}$';
+  try { el.setSelectionRange(from, to); } catch (err) { /* 忽略 */ }
+  insertAtBlank(expr, expr.length);
+}
+
 const symPanel = $('symPanel');
 $('btnSym').addEventListener('click', () => {
   symPanel.classList.toggle('open');
@@ -983,8 +1007,7 @@ document.querySelectorAll('.sym-btn').forEach((btn) => {
     if (btn.id === 'btnFrac') { insertFraction(); return; }
     const cond = btn.getAttribute('data-cond');
     if (cond) {
-      const expr = '$\\xlongequal{' + cond + '}$';
-      insertAtBlank(expr, expr.length);
+      insertCondition(cond);
       return;
     }
     const sym = btn.getAttribute('data-sym') || btn.textContent;
@@ -999,8 +1022,7 @@ $('btnCondCustom') && $('btnCondCustom').addEventListener('click', () => {
     toast('先输入条件，例如：浓硫酸 / Δ');
     return;
   }
-  const expr = '$\\xlongequal{' + cond + '}$';
-  insertAtBlank(expr, expr.length);
+  insertCondition(cond);
   condCustom.value = '';
 });
 

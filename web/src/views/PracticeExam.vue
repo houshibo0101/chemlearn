@@ -101,7 +101,7 @@
         </div>
         <div v-if="!examSubmitted && !currentQuestion.options" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;">
           <span style="font-size:12px;color:var(--text-secondary);">插入符号：</span>
-          <ChemSymbolBar @insert="insertSymbol" @fraction="insertFraction" />
+          <ChemSymbolBar @insert="insertSymbol" @fraction="insertFraction" @condition="insertCondition" />
           <span style="font-size:11.5px;color:var(--text-placeholder);">先点答案框，再点 ↑ 气体 / ↓ 沉淀；分数线可先填分子再填分母</span>
         </div>
 
@@ -254,7 +254,7 @@ import api from '@/api'
 import MathText from '@/components/MathText.vue'
 import ChemSymbolBar from '@/components/ChemSymbolBar.vue'
 import ScratchPad from '@/components/ScratchPad.vue'
-import { insertAtActiveInput, insertFractionAtActiveInput } from '@/utils/input'
+import { insertAtActiveInput, insertFractionAtActiveInput, insertConditionAtLastTextInput } from '@/utils/input'
 import { mediaUrl } from '@/utils/media'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Back, Close, ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
@@ -383,6 +383,12 @@ const insertSymbol = (text) => {
 const insertFraction = () => {
   if (!insertFractionAtActiveInput()) {
     ElMessage.info('请先点一下答案输入框，再点分数线')
+  }
+}
+
+const insertCondition = (condition) => {
+  if (!insertConditionAtLastTextInput(condition)) {
+    ElMessage.info('请先点一下答案输入框，再点条件')
   }
 }
 

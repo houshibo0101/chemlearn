@@ -1,4 +1,4 @@
-﻿# 化学学习系统 · ChemLearn
+# 化学学习系统 · ChemLearn
 
 [![CI](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml/badge.svg)](https://github.com/houshibo0101/chemlearn/actions/workflows/ci.yml)
 
@@ -92,7 +92,7 @@
 - 结晶水 `CuSO4·5H2O`、有机物 `CH3COOH` 同样识别
 - 电荷用 `^`：`Fe^3+` → Fe³⁺，`SO4^2-` → SO₄²⁻
 - 也支持 LaTeX：行内 `$H_2SO_4$`，块级 `$$\Delta H < 0$$`，化学式 `\ce{2Na + 2H2O -> 2NaOH + H2 ^}`
-- 条件写在等号上方：`$\xlongequal{点燃}$`；题库编辑器和套卷答题页的符号栏可直接点「点燃/加热/高温/催化剂/电解/光照」，也可以输入任意自定义条件后插入
+- 条件写在等号上方：`$\overset{点燃}{=}$`；题库编辑器和套卷答题页的符号栏可直接点「点燃/加热/高温/催化剂/电解/光照」，也可以输入任意自定义条件后插入
 
 自动排版只改变显示，数据库仍保存原文，因此答案判分不受影响；手动录入（编辑框有实时预览）、批量导入、作业/考试答题预览都会生效。**正确答案**字段下方同样有实时预览，答题结果页的正确答案也会自动排版。
 
