@@ -51,17 +51,24 @@ export function insertConditionAtLastTextInput(condition) {
   const { start, end, value } = selectionOf(el)
   let from = start
   let to = end
-  let selected = value.slice(start, end)
+  const selected = value.slice(start, end)
   if (!selected.trim()) {
     let i = start - 1
     while (i >= 0 && /\s/.test(value[i])) i -= 1
     if (value[i] === '=') {
       from = i
       to = i + 1
-      selected = '='
+    } else {
+      // 光标不在等号旁时，如果式子里只有一个等号，直接替换它
+      const equals = []
+      for (let j = 0; j < value.length; j += 1) {
+        if (value[j] === '=') equals.push(j)
+      }
+      if (equals.length === 1) {
+        from = equals[0]
+        to = equals[0] + 1
+      }
     }
-  } else if (selected.trim() === '=') {
-    // 选中等号，保持当前选区替换
   }
 
   const expr = `$\\overset{${safe}}{=}$`

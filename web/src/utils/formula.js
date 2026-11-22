@@ -163,6 +163,11 @@ export function renderFormula(value) {
   const stash = (html) => `\u0000${rendered.push(html) - 1}\u0000`
 
   let text = source
+  // 等号上方条件优先用自定义布局，保证“条件一行、等号一行”清晰可见
+  text = text.replace(/\$\\overset\{([^{}]+)\}\{=\}\$/g, (_m, cond) => stash(
+    '<span class="eq-cond-wrap"><span class="eq-cond">' + escapeHtml(cond) +
+    '</span><span class="eq-sign">=</span></span>'
+  ))
   // 先处理公式，避免公式里的 < > 被后续转义破坏
   text = text.replace(/\$\$([\s\S]+?)\$\$/g, (_m, f) => stash(renderMath(f.trim(), true)))
   text = text.replace(/\\\[([\s\S]+?)\\\]/g, (_m, f) => stash(renderMath(f.trim(), true)))

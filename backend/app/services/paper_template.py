@@ -259,8 +259,8 @@ TEMPLATE = r"""<!DOCTYPE html>
     display: inline-flex; flex-direction: column; align-items: center;
     vertical-align: middle; margin: 0 2px; line-height: 1.05;
   }
-  .mcond__txt { font-size: .68em; color: var(--text-2); white-space: nowrap; }
-  .mcond__arrow { font-size: 1.05em; }
+  .mcond__txt { font-size: .8em; line-height: 1.1; color: var(--text-2); white-space: nowrap; }
+  .mcond__arrow { font-size: 1.1em; line-height: 1; }
 
   /* ---------- 符号 / 分数线 插入 ---------- */
   .blank-prev {
@@ -988,6 +988,15 @@ function insertCondition(condition) {
     if (el.value[i] === '=') {
       from = i;
       to = i + 1;
+    } else {
+      const equals = [];
+      for (let j = 0; j < el.value.length; j += 1) {
+        if (el.value[j] === '=') equals.push(j);
+      }
+      if (equals.length === 1) {
+        from = equals[0];
+        to = equals[0] + 1;
+      }
     }
   }
   const expr = '$\\overset{' + condition + '}{=}$';

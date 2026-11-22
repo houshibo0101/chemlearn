@@ -22,6 +22,24 @@ const html = computed(() => renderFormula(props.text))
 .math-text :deep(.katex) {
   font-size: 1.05em;
 }
+.math-text :deep(.eq-cond-wrap) {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+  margin: 0 3px;
+  line-height: 1;
+}
+.math-text :deep(.eq-cond) {
+  font-size: 11px;
+  line-height: 1.1;
+  color: var(--text-secondary, #475569);
+  white-space: nowrap;
+}
+.math-text :deep(.eq-sign) {
+  font-size: 1.1em;
+  line-height: 1;
+}
 .math-text :deep(.katex-display) {
   margin: 0.35em 0;
   overflow-x: auto;
