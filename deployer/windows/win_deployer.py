@@ -1,22 +1,23 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """化学学习系统 · Windows 本地部署器
 
 把整套系统（前端 + 后端 + 题库）打包进一个 exe，双击后：
-    1. 把运行时文件部署到 %LOCALAPPDATA%\\ChemLearnWindows
-    2. 在本机启动服务（默认 8000，被占用自动避让）
-    3. 自动打开浏览器，局域网内其它设备也能访问
+    1. 先设置端口，点“开始部署”
+    2. 把运行时文件部署到 %LOCALAPPDATA%\\ChemLearnWindows
+    3. 在本机启动服务；端口被占用会提示，不会自动改端口
+    4. 自动打开浏览器，局域网内其它设备也能访问
 
 运行期不需要安装 Python、数据库或任何服务器软件，所有依赖已经打进 exe。
 
 用法：
-    ChemLearnWindows.exe                    图形界面，双击即用
-    ChemLearnWindows.exe --port 8090        指定端口
-    ChemLearnWindows.exe --no-browser       启动后不自动打开浏览器
+    ChemLearnWindows.exe                    图形界面，打开后先设置端口再部署
+    ChemLearnWindows.exe --port 8090        预设端口（仍需点“开始部署”）
+    ChemLearnWindows.exe --no-browser       部署完成后不自动打开浏览器
     ChemLearnWindows.exe --reset            重新部署（清空用户数据，恢复内置题库）
     ChemLearnWindows.exe --console          纯命令行模式（排障用，窗口里能看到日志）
 """
-VERSION = "2.1.48"
+VERSION = "2.1.49"
 APP_NAME = "化学学习系统"
 DATA_FOLDER = "ChemLearnWindows"
 PAYLOAD_NAME = "payload_chem.tar.gz"
@@ -358,9 +359,23 @@ def payload_meta():
 # --------------------------------------------------------------------------- 网络
 
 def port_free(port):
+    # Windows 下 SO_REUSEADDR 允许和正在监听的程序共用端口，不能只靠 bind 判断。
+    probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    probe.settimeout(0.25)
+    try:
+        if probe.connect_ex(("127.0.0.1", port)) == 0:
+            return False
+    except OSError:
+        pass
+    finally:
+        probe.close()
+
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        if hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        else:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.bind(("0.0.0.0", port))
         return True
     except OSError:
@@ -587,7 +602,16 @@ class DeployerApp:
         self._redirect_streams()
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         self.root.after(120, self._drain)
-        self.root.after(200, self.start)
+        self.root.after(200, self.show_initial)
+
+    def show_initial(self):
+        if self.starting or self.ready:
+            return
+        self.status("等待部署 · 请先确认端口", WARN)
+        self.log("部署器已打开，但尚未自动部署。")
+        self.log("请设置端口，然后点击右下角“开始部署”。")
+        if self.reset_requested:
+            self.log("当前为重新部署模式：开始部署时会清空本机数据。")
 
     # ---------------------------------------------------------------- UI
     def _build_ui(self):
@@ -619,7 +643,7 @@ class DeployerApp:
         tk.Label(header, text="%s · 本地部署器" % APP_NAME, bg=ACCENT, fg="white",
                  font=("Microsoft YaHei UI", 15, "bold")).pack(
             anchor="w", padx=px(22), pady=(px(14), 0))
-        tk.Label(header, text="双击即用 · 无需安装 Python / 数据库 · 局域网可访问",
+        tk.Label(header, text="先设端口 · 再点开始部署 · 无需安装 Python / 数据库 · 局域网可访问",
                  bg=ACCENT, fg="#e0e7ff",
                  font=("Microsoft YaHei UI", 9)).pack(anchor="w", padx=px(22),
                                                       pady=(px(4), 0))
@@ -637,7 +661,7 @@ class DeployerApp:
         self.status_dot = tk.Label(status_card, text="●", bg=CARD, fg=WARN,
                                    font=("Segoe UI", 12))
         self.status_dot.pack(side="left", padx=(px(14), px(6)), pady=px(10))
-        self.status_label = tk.Label(status_card, text="正在准备…", bg=CARD, fg=TEXT,
+        self.status_label = tk.Label(status_card, text="等待部署 · 请设置端口", bg=CARD, fg=TEXT,
                                      font=("Microsoft YaHei UI", 10, "bold"))
         self.status_label.pack(side="left", pady=px(10))
         self.progress = ttk.Progressbar(status_card, mode="determinate",
@@ -676,7 +700,7 @@ class DeployerApp:
 
         port_box = tk.Frame(footer, bg=BG)
         port_box.pack(side="left")
-        tk.Label(port_box, text="端口", bg=BG, fg=MUTED,
+        tk.Label(port_box, text="部署端口", bg=BG, fg=MUTED,
                  font=("Microsoft YaHei UI", 9)).pack(side="left")
         self.port_var = tk.StringVar(value=str(self.port))
         self.port_spin = ttk.Spinbox(port_box, from_=1024, to=65535, width=7,
@@ -690,7 +714,7 @@ class DeployerApp:
         self.browser_canvas = tk.Canvas(check, width=size, height=size, bg=BG,
                                         highlightthickness=0, bd=0, cursor="hand2")
         self.browser_canvas.pack(side="left")
-        self.browser_label = tk.Label(check, text="启动后自动打开浏览器", bg=BG,
+        self.browser_label = tk.Label(check, text="部署完成后自动打开浏览器", bg=BG,
                                       fg=TEXT, font=("Microsoft YaHei UI", 9),
                                       cursor="hand2")
         self.browser_label.pack(side="left", padx=(px(6), 0))
@@ -703,12 +727,11 @@ class DeployerApp:
         self.btn_redeploy = self._button(footer, "重新部署…", self.redeploy, primary=False)
         self.btn_settings = self._button(footer, "设置…", self.open_settings, primary=False)
         self.btn_data = self._button(footer, "数据目录", self.open_data_dir, primary=False)
-        self.btn_open = self._button(footer, "打开系统", self.open_system, primary=True)
-        self.btn_retry = self._button(footer, "重试启动", self.retry_start, primary=True)
+        self.btn_open = self._button(footer, "开始部署", self.start, primary=True)
         for btn in (self.btn_quit, self.btn_stop, self.btn_redeploy,
                     self.btn_settings, self.btn_data, self.btn_open):
             btn.pack(side="right", padx=(px(8), 0))
-        self.btn_open.configure(state="disabled")
+        self.btn_open.configure(state="normal")
         self.btn_stop.configure(state="disabled")
 
     def _url_row(self, parent, label, var, command, btn_text, row):
@@ -823,12 +846,37 @@ class DeployerApp:
     def start(self):
         if self.starting or self.ready:
             return
+        from tkinter import messagebox
+
+        raw = str(self.port_var.get() or "").strip()
+        try:
+            port = int(raw)
+        except ValueError:
+            self.status("端口格式不正确", ERR)
+            messagebox.showwarning("端口格式不正确", "请输入 1024–65535 之间的数字端口。")
+            self.port_spin.focus_set()
+            return
+        if not 1024 <= port <= 65535:
+            self.status("端口超出范围", ERR)
+            messagebox.showwarning("端口超出范围", "端口必须在 1024–65535 之间。")
+            self.port_spin.focus_set()
+            return
+        if not port_free(port):
+            self.status("端口 %d 已被占用" % port, ERR)
+            self.log("端口 %d 已被占用，部署已取消。请换一个端口再点“开始部署”。" % port)
+            messagebox.showwarning(
+                "端口被占用",
+                "端口 %d 已被其它程序占用。\n\n请换一个端口再开始部署。" % port)
+            self.port_spin.focus_set()
+            return
+
+        self.port = port
+        self.port_var.set(str(port))
         self.starting = True
-        self.port = self._safe_port()
-        self.port_var.set(str(self.port))
         self.port_spin.configure(state="disabled")
-        self.btn_retry.pack_forget()
-        self.status("正在部署运行环境…", WARN)
+        self.btn_open.configure(state="disabled", text="部署中…")
+        self.btn_stop.configure(state="disabled")
+        self.status("正在部署运行环境…（端口 %d）" % port, WARN)
         self.progress.configure(mode="indeterminate")
         self.progress.start(12)
         thread = threading.Thread(target=self._start_worker,
@@ -843,12 +891,9 @@ class DeployerApp:
             if meta.get("questions"):
                 self.log("内置题库：%s 题" % meta["questions"])
 
-            port = find_port(self.port)
-            if port is None:
-                raise DeployError("从 %d 起连续 40 个端口都被占用，请换一个端口再试" % self.port)
-            if port != self.port:
-                self.log("端口 %d 已被占用，自动改用 %d" % (self.port, port))
-            self.port = port
+            port = self.port
+            if not port_free(port):
+                raise DeployError("端口 %d 已被占用，请换一个端口重新部署" % port)
 
             self.status("等待服务就绪…", WARN)
             self.log("启动服务 0.0.0.0:%d（局域网可访问）" % port)
@@ -876,12 +921,11 @@ class DeployerApp:
         self.lan_var.set(lan or "（未检测到局域网 IP，请检查网络连接）")
         self.port_var.set(str(port))
         self.port_spin.configure(state="disabled")
-        self.btn_retry.pack_forget()
         self.progress.stop()
         self.progress.configure(mode="determinate")
         self.progress["value"] = 100
         self.status("已启动 · 运行中", OK)
-        self.btn_open.configure(state="normal")
+        self.btn_open.configure(text="打开系统", command=self.open_system, state="normal")
         self.btn_stop.configure(state="normal")
 
         self.log("")
@@ -909,25 +953,14 @@ class DeployerApp:
         self.log("")
         self.log("启动失败：" + message)
         self.btn_stop.configure(state="normal" if self.backend else "disabled")
-        self.btn_open.configure(state="disabled")
+        self.btn_open.configure(text="重试部署", command=self.start, state="normal")
         self.port_spin.configure(state="normal")
-        self.btn_retry.pack(side="right", padx=(self.px(8), 0),
-                            after=self.btn_open)
         messagebox.showerror(
             "启动失败",
             "部署没有完成，请查看窗口中的日志。\n\n"
             + message.strip().splitlines()[-1][:400])
 
     def retry_start(self):
-        if self.starting or self.ready:
-            return
-        self.btn_retry.pack_forget()
-        self.port_spin.configure(state="disabled")
-        try:
-            self.port = int(self.port_var.get())
-        except Exception:
-            self.port = 8000
-            self.port_var.set("8000")
         self.start()
 
     # ---------------------------------------------------------------- 操作
@@ -1088,14 +1121,12 @@ class DeployerApp:
             self.root.after(150, self._finish_stop)
             return
         self.stopping = False
-        self.status("已停止", MUTED)
-        self.log("服务已停止。可点“重试启动”重新运行，或点“退出”关闭窗口。")
+        self.status("已停止 · 可重新部署", MUTED)
+        self.log("服务已停止。可以重新设置端口，再点“开始部署”。")
         self.progress["value"] = 0
-        self.btn_open.configure(state="disabled")
+        self.btn_open.configure(text="开始部署", command=self.start, state="normal")
         self.btn_stop.configure(state="disabled")
         self.port_spin.configure(state="normal")
-        self.btn_retry.pack(side="right", padx=(self.px(8), 0),
-                            after=self.btn_open)
 
     def _spawn_new_instance(self, extra):
         if getattr(sys, "frozen", False):
